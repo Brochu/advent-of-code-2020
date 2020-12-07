@@ -32,13 +32,13 @@ public:
             stream >> passwd;
             stream >> passwd;
 
-            const int i = std::count_if(passwd.begin(), passwd.end(), [letter](char c){ return letter == c; });
+            const long long i = std::count_if(passwd.begin(), passwd.end(), [letter](char c){ return letter == c; });
             if (i >= low && i <= high)
             {
                 count++;
             }
             
-            std::printf("(%i, %i) - [%c] (%s) : seen = %i; count = %i\n", low, high, letter, passwd.c_str(), i, count);
+            std::printf("(%i, %i) - [%c] (%s) : seen = %lli; count = %i\n", low, high, letter, passwd.c_str(), i, count);
         }
         file.close();
 
