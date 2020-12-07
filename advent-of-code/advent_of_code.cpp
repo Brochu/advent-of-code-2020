@@ -4,7 +4,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day5.cpp"
+#include "Day7.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -58,10 +58,38 @@ int main(int argc, char* argv[])
     // printf("Valid count -> %i", result);
     
     // Day 5
-    Day5 d(argv[1]);
-    const auto result = d.list_seat_ids();
+    //Day5 d(argv[1]);
+    //auto result = d.list_seat_ids();
+    //for(const auto& e : result)
+    //{
+    //    printf("%i\n", e);
+    //}
 
     // Find max ID
+    //const auto it = std::max_element(result.begin(), result.end());
+    //printf("max seat id is = %i\n", *it);
+
+    //std::sort(result.begin(), result.end());
+    //for(int i = 0; i < result.size()-1; ++i)
+    //{
+    //    if (result[i] != result[i+1] - 1)
+    //    {
+    //        printf("%i\n", result[i+1]);
+    //    }
+    //}
+
+    // Day 6
+    //Day6 d(argv[1]);
+    //const auto groups = d.list_groups();
+    //std::vector<int> scores;
+    //std::transform(groups.cbegin(), groups.cend(), std::back_inserter(scores),
+    //    [&d](const auto& g){ return d.get_group_score_every(g); });
+
+    //const int total = std::accumulate(scores.begin(), scores.end(), 0);
+    //printf("Total count = %i\n", total);
+    
+    // Day 7
+    Day7 d(argv[1]);
     
     return 0;
 }
