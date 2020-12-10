@@ -90,6 +90,11 @@ int main(int argc, char* argv[])
     
     // Day 7
     Day7 d(argv[1]);
+    const auto result = d.get_all_outermost("shiny gold bag");
+    printf("Bags count = %lld\n", result.size());
+
+    const int part2result = d.get_max_count("shiny gold bag");
+    printf("Bags count 2 = %i\n",  part2result);
     
     return 0;
 }
