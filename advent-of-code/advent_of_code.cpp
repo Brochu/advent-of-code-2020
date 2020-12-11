@@ -4,7 +4,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day9.cpp"
+#include "Day10.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -105,32 +105,47 @@ int main(int argc, char* argv[])
     //printf("value of the acc: %i\n", d.get_acc());
     
     // Day 9
-    Day9 d(argv[1]);
-    //int result = d.check_d1_debug(
+    //Day9 d(argv[1]);
+    ////d.init_from_debug(
+    ////{
+    ////        35,
+    ////        20,
+    ////        15,
+    ////        25,
+    ////        47,
+    ////        40,
+    ////        62,
+    ////        55,
+    ////        65,
+    ////        95,
+    ////        102,
+    ////        117,
+    ////        150,
+    ////        182,
+    ////        127,
+    ////        219,
+    ////        299,
+    ////        277,
+    ////        309,
+    ////        576,
+    ////});
+    //d.init_from_file();
+    //const int result = d.check_d1(25);
+    //printf("found number: %i\n", result);
+    //
+    //const auto& list = d.check_d2(result);
+    //for(const auto& i : list)
     //{
-    //        35,
-    //        20,
-    //        15,
-    //        25,
-    //        47,
-    //        40,
-    //        62,
-    //        55,
-    //        65,
-    //        95,
-    //        102,
-    //        117,
-    //        150,
-    //        182,
-    //        127,
-    //        219,
-    //        299,
-    //        277,
-    //        309,
-    //        576,
-    //    }, 5);
-    const int result = d.check_d1_file(25);
-    printf("found number: %i\n", result);
+    //    printf("- %i\n", i);
+    //}
+    //
+    //const auto& vals = std::minmax_element(list.cbegin(), list.cend());
+    //int min = *std::get<0>(vals);
+    //int max = *std::get<1>(vals);
+    //printf("min: %i, max: %i\ntotal = %i\n", min, max, min + max);
+    
+    // Day 10
+    Day10 d(argv[1]);
     
     return 0;
 }
