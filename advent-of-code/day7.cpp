@@ -66,6 +66,50 @@ public:
         file.close();
     }
 
+    void init_debug()
+    {
+        _rules["light red bag"] =
+        {
+            std::make_pair<int, std::string>(1, "bright white bag"),
+            std::make_pair<int, std::string>(2, "muted yellow bag")
+        };
+        _rules["dark orange bag"] =
+        {
+            std::make_pair<int, std::string>(3, "bright white bag"),
+            std::make_pair<int, std::string>(4, "muted yellow bag")
+        };
+        _rules["bright white bag"] =
+        {
+            std::make_pair<int, std::string>(1, "shiny gold bag"),
+        };
+        _rules["muted yellow bag"] =
+        {
+            std::make_pair<int, std::string>(2, "shiny gold bag"),
+            std::make_pair<int, std::string>(9, "faded blue bag"),
+        };
+        _rules["shiny gold bag"] =
+        {
+            std::make_pair<int, std::string>(1, "dark olive bag"),
+            std::make_pair<int, std::string>(2, "vibrant plum bag"),
+        };
+        _rules["dark olive bag"] =
+        {
+            std::make_pair<int, std::string>(3, "faded blue bag"),
+            std::make_pair<int, std::string>(4, "dotted black bag"),
+        };
+        _rules["vibrant plum bag"] =
+        {
+            std::make_pair<int, std::string>(5, "faded blue bag"),
+            std::make_pair<int, std::string>(6, "dotted black bag"),
+        };
+        _rules["faded blue bag"] =
+        {
+        };
+        _rules["dotted black bag"] =
+        {
+        };
+    }
+
     std::set<std::string> get_all_outermost(std::string bag_name) const
     {
         std::set<std::string> all_bags;
@@ -107,14 +151,18 @@ public:
             count = std::accumulate(rule.begin(), rule.end(), 0,
                 [this](int t, const std::pair<int, std::string>& e)
                 {
-                    int total = get_max_count(std::get<1>(e));
-                    printf("[%s] %i * %i\n", std::get<1>(e).c_str(), std::get<0>(e), total);
-                    return t + std::get<0>(e) * total;
+                    const int total = get_max_count(std::get<1>(e));
+                    printf("[%s] %i + (%i * %i) = %i\n",
+                        std::get<1>(e).c_str(),
+                        std::get<0>(e), std::get<0>(e),
+                        total,
+                        std::get<0>(e) + (std::get<0>(e) * total));
+                    return t + std::get<0>(e) + (std::get<0>(e) * total);
                 });
         }
         else
         {
-            count = 1;
+            count = 0;
         }
 
         return count;

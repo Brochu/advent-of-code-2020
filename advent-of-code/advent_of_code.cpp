@@ -4,7 +4,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day7.cpp"
+#include "Day9.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -89,12 +89,48 @@ int main(int argc, char* argv[])
     //printf("Total count = %i\n", total);
     
     // Day 7
-    Day7 d(argv[1]);
-    const auto result = d.get_all_outermost("shiny gold bag");
-    printf("Bags count = %lld\n", result.size());
+    //Day7 d(argv[1]);
+    //const auto result = d.get_all_outermost("shiny gold bag");
+    //printf("Bags count = %lld\n", result.size());
 
-    const int part2result = d.get_max_count("shiny gold bag");
-    printf("Bags count 2 = %i\n",  part2result);
+    //const int part2result = d.get_max_count("shiny gold bag");
+    //printf("Bags count 2 = %i\n",  part2result);
+    
+    // Day 8
+    //Day8 d(argv[1]);
+    ////d.parse_debug("nop +0\nacc +1\njmp +4\nacc +3\njmp -3\nacc -99\nacc +1\njmp -4\nacc +6");
+    //d.parse_file();
+    //d.force_complete_run();
+
+    //printf("value of the acc: %i\n", d.get_acc());
+    
+    // Day 9
+    Day9 d(argv[1]);
+    //int result = d.check_d1_debug(
+    //{
+    //        35,
+    //        20,
+    //        15,
+    //        25,
+    //        47,
+    //        40,
+    //        62,
+    //        55,
+    //        65,
+    //        95,
+    //        102,
+    //        117,
+    //        150,
+    //        182,
+    //        127,
+    //        219,
+    //        299,
+    //        277,
+    //        309,
+    //        576,
+    //    }, 5);
+    const int result = d.check_d1_file(25);
+    printf("found number: %i\n", result);
     
     return 0;
 }
