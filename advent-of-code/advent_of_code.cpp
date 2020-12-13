@@ -1,10 +1,11 @@
 #include <cstdio>
 #include <vector>
 #include <algorithm>
+#include <complex.h>
 #include <numeric>
 #include <functional>
 
-#include "Day10.cpp"
+#include "Day11.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -145,7 +146,25 @@ int main(int argc, char* argv[])
     //printf("min: %i, max: %i\ntotal = %i\n", min, max, min + max);
     
     // Day 10
-    Day10 d(argv[1]);
+    //Day10 d(argv[1]);
+    //d.init_from_file();
+    ////d.init_from_debug();
+    //
+    //const int result = d.calculate_part1();
+    //printf("Result for part 1 = %i\n", result);
+    //
+    //const long long part2 = d.calculate_part2();
+    //printf("Result for part 1 = %lli\n", part2);
+    
+    // Day 11
+    Day11 d(argv[1]);
+    d.output_map();
+    
+    const auto& ns = d.get_neighbours(std::make_pair(0, 0));
+    for(const auto& n : ns)
+    {
+        printf("| (%i, %i) |", n.first, n.second);
+    }
     
     return 0;
 }
