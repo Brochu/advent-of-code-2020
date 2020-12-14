@@ -27,6 +27,8 @@ public:
         while(ss)
         {
             std::getline(ss, line);
+            if (line.size() == 0) break;
+            
             _map.emplace_back();
             
             std::vector<char>& current_list = _map[_map.size()-1];
@@ -39,14 +41,17 @@ public:
 
     void output_map() const
     {
+        printf("==================\n");
         for(int i = 0; i < _map.size(); ++i)
         {
             for(int j = 0; j < _map[i].size(); ++j)
             {
-                printf(" %c ", _map[i][j]);
+                printf("%c", _map[i][j]);
             }
             printf("\n");
         }
+        
+        printf("==================\n");
     }
 
     bool is_valid(const std::pair<int, int>& p) const
@@ -63,6 +68,19 @@ public:
     bool is_empty(const std::pair<int, int>& p) const
     {
         return _map[std::get<0>(p)][std::get<1>(p)] == 'L';
+    }
+
+    void flip_state(const std::pair<int, int>& p)
+    {
+        const char& current = _map[p.first][p.second];
+        if (current == '#')
+        {
+            _map[p.first][p.second] = 'L';
+        }
+        else if (current == 'L')
+        {
+            _map[p.first][p.second] = '#';
+        }
     }
 
     std::vector<std::pair<int, int>> get_neighbours(const std::pair<int, int>& p) const
@@ -83,20 +101,58 @@ public:
         std::vector<std::pair<int, int>> result;
         for(const auto& dir : dirs)
         {
-            const auto curr = get_dir(p, dir);
+            const auto curr = std::make_pair(p.first + dir.first, p.second + dir.second);
             if (is_valid(curr)) result.push_back(curr);
         }
 
         return result;
     }
 
-    std::pair<int, int> get_dir(const std::pair<int, int>& start, const std::pair<int, int>& dir) const
+    int count_occupied_adj(const std::pair<int, int>& p) const
     {
-        return std::make_pair(start.first + dir.first, start.second + dir.second);
+        const auto& ajds = get_neighbours(p);
+        const auto op = [this](int total, const std::pair<int, int>& item)
+        {
+            total += is_occupied(item) ? 1 : 0;
+            return total;
+        };
+
+        return std::accumulate(ajds.cbegin(), ajds.cend(), 0, op);
     }
 
-    void run_once()
+    int count_occupied() const
     {
+        std::vector<int> partial;
+        std::transform(_map.begin(), _map.end(), std::back_inserter(partial), []()
+        {
+            // get total for each row
+        });
+        //accumulate for total
+        return 0;
+    }
+
+    bool run_once()
+    {
+        std::vector<std::pair<int, int>> to_flip;
+        
+        for(int i = 0; i < _map.size(); ++i)
+        {
+            for(int j = 0; j < _map.size(); ++j)
+            {
+                const auto& current = std::make_pair(i, j);
+                const int occupied_ajds = count_occupied_adj(current);
+
+                if ((_map[current.first][current.second] == 'L' && occupied_ajds == 0) ||
+                    (_map[current.first][current.second] == '#' && occupied_ajds >= 4))
+                {
+                    to_flip.push_back(current);
+                }
+            }
+        }
+
+        std::for_each(to_flip.begin(), to_flip.end(), [this](const auto& p){ flip_state(p); });
+
+        return to_flip.size() > 0;
     }
 
 private:

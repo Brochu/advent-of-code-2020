@@ -159,12 +159,16 @@ int main(int argc, char* argv[])
     // Day 11
     Day11 d(argv[1]);
     d.output_map();
-    
-    const auto& ns = d.get_neighbours(std::make_pair(0, 0));
-    for(const auto& n : ns)
-    {
-        printf("| (%i, %i) |", n.first, n.second);
-    }
+    d.run_once();
+    d.output_map();
+    d.run_once();
+    d.output_map();
+    d.run_once();
+    d.output_map();
+    d.run_once();
+    d.output_map();
+    d.run_once();
+    d.output_map();
     
     return 0;
 }
