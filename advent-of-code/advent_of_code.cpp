@@ -5,7 +5,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day11.cpp"
+#include "Day12.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -157,18 +157,21 @@ int main(int argc, char* argv[])
     //printf("Result for part 1 = %lli\n", part2);
     
     // Day 11
-    Day11 d(argv[1]);
-    d.output_map();
-    d.run_once();
-    d.output_map();
-    d.run_once();
-    d.output_map();
-    d.run_once();
-    d.output_map();
-    d.run_once();
-    d.output_map();
-    d.run_once();
-    d.output_map();
+    //Day11 d(argv[1]);
+    //int run_count = 0;
+    //while(d.run_once(false))
+    //{
+    //    printf("Running %i times ...\n", ++run_count);
+    //}
+    //d.output_map();
+
+    //const auto total = d.count_occupied();
+    //printf("total occupied = %lld\n",  total);
+    
+    // Day 12
+    Day12 d(argv[1]);
+    const int dist = d.get_man_dist();
+    printf("dist = %i\n", dist);
     
     return 0;
 }
