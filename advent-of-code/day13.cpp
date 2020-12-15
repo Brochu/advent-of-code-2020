@@ -9,8 +9,8 @@ class Day13
 public:
     Day13(char* fname) : _filename(fname)
     {
-        parse_file();
-        //parse_debug();
+        //parse_file();
+        parse_debug();
     }
 
     void parse_file()
@@ -65,6 +65,11 @@ public:
         const size_t offset = min_it - delays.begin();
 
         return std::make_pair(_buses[offset], *min_it);
+    }
+
+    long long find_part2(const long long offset = 0, const int idx = 0) const
+    {
+        return 0L;
     }
 
 private:
