@@ -5,7 +5,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day12.cpp"
+#include "Day13.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -169,9 +169,14 @@ int main(int argc, char* argv[])
     //printf("total occupied = %lld\n",  total);
     
     // Day 12
-    Day12 d(argv[1]);
-    const int dist = d.get_man_dist();
-    printf("dist = %i\n", dist);
+    //Day12 d(argv[1]);
+    //const int dist = d.get_man_dist();
+    //printf("dist = %i\n", dist);
+    
+    // Day 12
+    Day13 d(argv[1]);
+    const auto& result = d.best_id_delay();
+    printf("best bus id = %i, delay = %i [%i]\n", result.first, result.second, result.first * result.second);
     
     return 0;
 }

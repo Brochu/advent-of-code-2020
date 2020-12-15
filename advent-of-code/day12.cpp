@@ -56,22 +56,38 @@ public:
         else if (op == 'R') exec_right(arg);
         else if (op == 'F') exec_forward(arg);
         
-        printf("%s (e: %i, n: %i)\n", instr.c_str(), _east, _north);
+        printf("%s; boat(%i, %i); WP(%i, %i)\n", instr.c_str(), _east, _north, _wp_east, _wp_north);
     }
 
-    void exec_north(const int arg) { _north += arg; }
-    void exec_south(const int arg) { _north -= arg; }
-    void exec_east(const int arg) { _east += arg; }
-    void exec_west(const int arg) { _east -= arg; }
-    void exec_left(const int arg) { _facing = (_facing + arg) % 360; }
+    void exec_north(const int arg) { _wp_north += arg; }
+    void exec_south(const int arg) { _wp_north -= arg; }
+    void exec_east(const int arg) { _wp_east += arg; }
+    void exec_west(const int arg) { _wp_east -= arg; }
+    void exec_left(const int arg)
+    {
+        for(int i = 0; i < arg / 90; ++i)
+        {
+            std::swap(_wp_north, _wp_east);
+            _wp_east *= -1;
+        }
+        _facing = (_facing + arg) % 360;
+    }
     void exec_right(const int arg)
     {
+        for(int i = 0; i < arg / 90; ++i)
+        {
+            std::swap(_wp_north, _wp_east);
+            _wp_north *= -1;
+        }
+        
         _facing -= arg;
         if (_facing < 0) _facing = 360 - abs(_facing);
     }
     void exec_forward(const int arg)
     {
-        exec(get_facing_dir() + std::to_string(arg));
+        //exec(get_facing_dir() + std::to_string(arg));
+        _north += (arg * _wp_north);
+        _east += (arg * _wp_east);
     }
 
     std::string get_facing_dir() const
@@ -95,4 +111,7 @@ private:
     int _facing = 0;
     int _east = 0;
     int _north = 0;
+
+    int _wp_east = 10;
+    int _wp_north = 1;
 };
