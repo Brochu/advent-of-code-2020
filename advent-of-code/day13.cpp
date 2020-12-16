@@ -9,8 +9,8 @@ class Day13
 public:
     Day13(char* fname) : _filename(fname)
     {
-        //parse_file();
-        parse_debug();
+        parse_file();
+        //parse_debug();
     }
 
     void parse_file()
@@ -29,13 +29,17 @@ public:
             {
                 _buses.push_back(atoi(service.c_str()));
             }
+            else
+            {
+                _buses.push_back(-1);
+            }
             std::getline(file, service, ',');
         }
     }
     
     void parse_debug()
     {
-        std::stringstream ss("939\n7,13,x,x,59,x,31,19,");
+        std::stringstream ss("939\n1789,37,47,1889,");
         std::string raw_early;
         std::string service;
         
@@ -45,9 +49,13 @@ public:
         do
         {
             std::getline(ss, service, ',');
-            if (service[0] != 'x' && service.size() > 0)
+            if (service.size() > 0 && service[0] != 'x')
             {
                 _buses.push_back(atoi(service.c_str()));
+            }
+            else if (service.size() > 0 && service[0] == 'x')
+            {
+                _buses.push_back(-1);
             }
         } while (service.size() > 0);
     }
@@ -57,7 +65,7 @@ public:
         std::vector<int> delays;
         const auto func = [this](const int& bus)
         {
-            return bus - (earliest % bus);
+            return (bus > 0) ? bus - (earliest % bus) : std::numeric_limits<int>::max();
         };
         std::transform(_buses.begin(), _buses.end(), std::back_inserter(delays), func);
         
@@ -67,16 +75,33 @@ public:
         return std::make_pair(_buses[offset], *min_it);
     }
 
-    long long find_part2(const long long start_t = 0, const int idx = 0) const
+    long long find_part2()
     {
-        if (_buses[idx+1] - (start_t % _buses[idx+1]) == 1)
+        long long start = _buses[0];
+        long long next = _buses[0];
+        int target = 1;
+
+        for(int i = 1; i < _buses.size(); ++i)
         {
-            return (idx == _buses.size()-2) ? start_t : find_part2(start_t, idx+1);
+            if (_buses[i] > 0)
+            {
+                while(_buses[i] - (start % _buses[i]) != target)
+                {
+                    printf("Tried for bus %i, starting at %lld next is %lld and target is %i\n",
+                        _buses[i], start, next, target);
+                    
+                    start += next;
+                }
+                target++;
+                next *= _buses[i];
+            }
+            else
+            {
+                ++target;
+            }
         }
-        else
-        {
-            return find_part2(start_t+1, 0);
-        }
+        
+        return start;
     }
 
 private:
