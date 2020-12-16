@@ -67,9 +67,16 @@ public:
         return std::make_pair(_buses[offset], *min_it);
     }
 
-    long long find_part2(const long long offset = 0, const int idx = 0) const
+    long long find_part2(const long long start_t = 0, const int idx = 0) const
     {
-        return 0L;
+        if (_buses[idx+1] - (start_t % _buses[idx+1]) == 1)
+        {
+            return (idx == _buses.size()-2) ? start_t : find_part2(start_t, idx+1);
+        }
+        else
+        {
+            return find_part2(start_t+1, 0);
+        }
     }
 
 private:
