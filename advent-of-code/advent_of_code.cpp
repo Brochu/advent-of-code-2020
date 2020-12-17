@@ -173,15 +173,15 @@ int main(int argc, char* argv[])
     //printf("dist = %i\n", dist);
     
     // Day 13
-    Day13 d(argv[1]);
-    const auto& result = d.best_id_delay();
-    printf("best bus id = %i, delay = %i [%i]\n", result.first, result.second, result.first * result.second);
+    //Day13 d(argv[1]);
+    //const auto& result = d.best_id_delay();
+    //printf("best bus id = %i, delay = %i [%i]\n", result.first, result.second, result.first * result.second);
 
-    const auto& part2 = d.find_part2();
-    printf("result for part2 = %lld", part2);
+    //const auto& part2 = d.find_part2();
+    //printf("result for part2 = %lld", part2);
     
     // Day 14
-    Day14 d14(argv[1]);
+    Day14 d(argv[1]);
     
     return 0;
 }

@@ -23,16 +23,19 @@ public:
         earliest = atoi(raw_early.c_str());
 
         std::getline(file, service, ',');
+        int t = 0;
         while(file)
         {
             if (service[0] != 'x')
             {
                 _buses.push_back(atoi(service.c_str()));
+                _bus2.push_back(std::make_pair(t, atoi(service.c_str())));
             }
             else
             {
                 _buses.push_back(-1);
             }
+            ++t;
             std::getline(file, service, ',');
         }
     }
@@ -46,17 +49,16 @@ public:
         std::getline(ss, raw_early);
         earliest = atoi(raw_early.c_str());
 
+        int t = 0;
         do
         {
             std::getline(ss, service, ',');
             if (service.size() > 0 && service[0] != 'x')
             {
                 _buses.push_back(atoi(service.c_str()));
+                _bus2.push_back(std::make_pair(t, atoi(service.c_str())));
             }
-            else if (service.size() > 0 && service[0] == 'x')
-            {
-                _buses.push_back(-1);
-            }
+            ++t;
         } while (service.size() > 0);
     }
 
@@ -77,31 +79,23 @@ public:
 
     long long find_part2()
     {
-        long long start = _buses[0];
-        long long next = _buses[0];
-        int target = 1;
-
-        for(int i = 1; i < _buses.size(); ++i)
-        {
-            if (_buses[i] > 0)
-            {
-                while(_buses[i] - (start % _buses[i]) != target)
-                {
-                    printf("Tried for bus %i, starting at %lld next is %lld and target is %i\n",
-                        _buses[i], start, next, target);
-                    
-                    start += next;
+        long long i = _bus2[0].second, t = 1;
+        long long nxt_i = _bus2[0].second;
+        for (int j = 0; j < _bus2.size()-1; ++j) {
+            long long t = 1;
+            while(true) {
+                long long t1 = (i + (nxt_i * t));
+                auto next_b = t1 + _bus2[j+1].first;
+                if((next_b % _bus2[j+1].second) ==0) {
+                    i = t1;
+                    break;
                 }
-                target++;
-                next *= _buses[i];
+                t++;
             }
-            else
-            {
-                ++target;
-            }
+            nxt_i *= _bus2[j+1].second;
         }
-        
-        return start;
+
+        return i;
     }
 
 private:
@@ -109,4 +103,5 @@ private:
 
     int earliest;
     std::vector<int> _buses;
+    std::vector<std::pair<int, long>> _bus2;
 };
