@@ -72,16 +72,38 @@ public:
 
     void set_mem(int addr, long long val)
     {
-        printf("set memory at %i to %lld\n", addr, val);
-        _mem[addr] = masked_val(val);
+        printf("set memory at %i\b", addr);
+        
+        printf("Value before mask : %lld\n", val);
+        const long long masked = masked_val(val);
+        printf("Value after mask : %lld\n", masked);
+        
+        _mem[addr] = masked;
     }
 
     long long masked_val(long long val) const
     {
-        int masked = 0;
-        for(int i = 0; i < _mask.size(); ++i)
+        long long masked = 0;
+        for(auto it = _mask.begin(); it != _mask.end(); ++it)
         {
+            const size_t i = it - _mask.begin();
+            const long long temp = val >> ((_mask.size()-1)-i);
+            const short bit = ((temp % 2) == 0) ? 0 : 1;
+            if (*it == '1')
+            {
+                masked++;
+            }
+            else if (*it == 'X')
+            {
+                masked += bit;
+            }
+
+            if (it != _mask.end()-1)
+            {
+                masked = masked << 1;
+            }
         }
+
         return masked;
     }
 
