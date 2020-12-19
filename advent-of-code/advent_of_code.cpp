@@ -3,8 +3,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day13.cpp"
-#include "Day14.cpp"
+#include "Day15.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -181,7 +180,13 @@ int main(int argc, char* argv[])
     //printf("result for part2 = %lld", part2);
     
     // Day 14
-    Day14 d(argv[1]);
+    Day15 d;
+    std::vector<int64_t> results;
+    results.push_back(d.get_turn(10));
+    for(const auto& r : results)
+    {
+        printf("[D15][P1] %lld\n", r);
+    }
     
     return 0;
 }
