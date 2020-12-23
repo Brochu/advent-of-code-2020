@@ -3,7 +3,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day15.cpp"
+#include "Day17.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -179,14 +179,22 @@ int main(int argc, char* argv[])
     //const auto& part2 = d.find_part2();
     //printf("result for part2 = %lld", part2);
     
-    // Day 14
-    Day15 d;
-    std::vector<int64_t> results;
-    results.push_back(d.get_turn(10));
-    for(const auto& r : results)
-    {
-        printf("[D15][P1] %lld\n", r);
-    }
+    // Day 15
+    //Day15 d;
+    //const auto result = d.get_turn(30000000);
+    //printf("[D15][P1][%i] %lld\n", 30000000, result);
+    
+    // Day 16
+    //Day16 d(argv[1]);
+    //const auto result = d.get_error_rate();
+    //printf("ERROR RATE: %lld\n", result);
+
+    //const auto part_2 = d.get_part_2();
+    //printf("PART 2: %lld\n", part_2);
+    
+    // Day 17
+    Day17 d(argv[1]);
+    d.debug_print();
     
     return 0;
 }
