@@ -3,7 +3,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day17.cpp"
+#include "Day18.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -193,8 +193,20 @@ int main(int argc, char* argv[])
     //printf("PART 2: %lld\n", part_2);
     
     // Day 17
-    Day17 d(argv[1]);
-    d.debug_print();
+    //Day17 d(argv[1]);
+    //d.debug_print();
+    //d.simulate(6);
+    //printf("active count = %lld", d.active_count());
+    
+    // Day 18
+    Day18 d(argv[1]);
+    const auto& res = d.get_results();
+    //for(const auto& r : res)
+    //{
+    //    printf("= %lld\n", r);
+    //}
+    const int64_t final_result = std::accumulate(res.begin(), res.end(), 0LL);
+    printf("= %lld\n", final_result);
     
     return 0;
 }

@@ -155,10 +155,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="advent_of_code.cpp" />
-    <ClCompile Include="day17.cpp" />
+    <ClCompile Include="day18.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="day17-data.txt" />
+    <Content Include="day18-data.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
