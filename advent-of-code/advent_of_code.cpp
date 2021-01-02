@@ -3,7 +3,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day19.cpp"
+#include "Day20.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -204,10 +204,14 @@ int main(int argc, char* argv[])
     //printf("= %lld\n", res);
     
     // Day 19
-    Day19 d(argv[1]);
-    const auto result = d.get_par1();
-    printf("\n");
-    printf(" = %i\n", result);
+    //Day19 d(argv[1]);
+    //const auto result = d.get_par1();
+    //printf("\n");
+    //printf(" = %i\n", result);
+
+    // Day 20
+    Day20 d(argv[1]);
+    d.print_tiles();
     
     return 0;
 }
