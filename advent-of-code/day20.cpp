@@ -3,10 +3,10 @@
 #include <fstream>
 #include <vector>
 #include <map>
-#include <tuple>
+#include <array>
 #include <algorithm>
 
-typedef std::tuple<std::string, std::string, std::string, std::string> bounds;
+typedef std::array<std::string, 4> bounds;
 
 class Day20
 {
@@ -52,7 +52,7 @@ public:
             right += elem.back();
         });
         
-        const bounds first_bound = std::make_tuple(*(++raw.begin()), left, *(--raw.end()), right);
+        const bounds first_bound = { *(++raw.begin()), left, *(--raw.end()), right };
         return std::make_pair(tile_id, find_permutations(first_bound));
     }
 
@@ -62,34 +62,27 @@ public:
         result.push_back(first);
 
         // Rotations
-        result.push_back(std::make_tuple(
-            std::get<1>(first), std::get<2>(first), std::get<3>(first), std::get<0>(first)));
-        result.push_back(std::make_tuple(
-            std::get<2>(first), std::get<3>(first), std::get<0>(first), std::get<1>(first)));
-        result.push_back(std::make_tuple(
-            std::get<3>(first), std::get<0>(first), std::get<1>(first), std::get<2>(first)));
+        result.push_back({ first[1], first[2], first[3], first[0] });
+        result.push_back({ first[2], first[3], first[0], first[1] });
+        result.push_back({ first[3], first[0], first[1], first[2] });
 
         // Flips
         std::vector<bounds> flips;
         std::for_each(result.begin(), result.end(), [&flips](const bounds& b)
         {
-            std::string rev_top = std::get<0>(b);
+            std::string rev_top = b[0];
             std::reverse(rev_top.begin(), rev_top.end());
-            std::string rev_left = std::get<1>(b);
+            std::string rev_left = b[1];
             std::reverse(rev_left.begin(), rev_left.end());
-            std::string rev_bottom = std::get<2>(b);
+            std::string rev_bottom = b[2];
             std::reverse(rev_bottom.begin(), rev_bottom.end());
-            std::string rev_right = std::get<3>(b);
+            std::string rev_right = b[3];
             std::reverse(rev_right.begin(), rev_right.end());
             
-            flips.push_back(std::make_tuple(
-                std::get<2>(b), rev_left, std::get<0>(b), rev_right));
-            flips.push_back(std::make_tuple(
-                rev_top, std::get<3>(b), rev_bottom, std::get<1>(b)));
-            flips.push_back(std::make_tuple(
-                rev_left, rev_top, rev_right, rev_bottom));
-            flips.push_back(std::make_tuple(
-                rev_right, rev_bottom, rev_left, rev_top));
+            flips.push_back({ b[2], rev_left, b[0], rev_right });
+            flips.push_back({ rev_top, b[3], rev_bottom, b[1] });
+            flips.push_back({ rev_left, rev_top, rev_right, rev_bottom });
+            flips.push_back({ rev_right, rev_bottom, rev_left, rev_top });
         });
 
         result.reserve(result.size() + flips.size());
@@ -126,19 +119,14 @@ public:
 
     std::vector<std::vector<bounds>> find_arrangement() const
     {
-        std::vector<std::vector<bounds>> result;
         const size_t count = static_cast<size_t>(sqrt(_combine.size()));
         
-        for(size_t i = 0; i < count; i++)
+        std::vector<std::vector<bounds>> result(count);
+        for(auto& b : result)
         {
-            std::vector<bounds> temp;
-            for(size_t j = 0; j < count; j++)
-            {
-                temp.push_back(std::make_tuple("", "", "", ""));
-            }
-            result.push_back(temp);
+            b = std::vector<bounds>(count);
         }
-
+        
         std::vector<int> used_tiles;
 
         for(const auto& t : _combine)
@@ -148,11 +136,9 @@ public:
             for(const auto& b : t.second)
             {
                 result[0][0] = b;
-                
-                const auto temp = find_arrangement_impl(result, used_tiles, 1, 0);
-                if (used_tiles.size() == _combine.size())
+                if (find_arrangement_impl(result, used_tiles))
                 {
-                    return temp;
+                    return result;
                 }
             }
             
@@ -162,11 +148,56 @@ public:
         return result;
     }
 
-    std::vector<std::vector<bounds>> find_arrangement_impl(std::vector<std::vector<bounds>>& partial, std::vector<int>& used_tiles, int x, int y) const
+    bool find_arrangement_impl(std::vector<std::vector<bounds>>& partial, std::vector<int>& used_tiles, int x = 0, int y = 0) const
     {
-        printf("[0][0] = %i [%lld]\n", used_tiles[0], used_tiles.size());
-        return partial;
+        const auto to_check = check_coords(x, y, partial.size());
+        const auto origin = std::make_pair(x, y);
+        const bounds& current = partial[x][y];
+        
+        for(const auto& c : to_check)
+        {
+            const int int_idx = find_interface_index(origin, c);
+            printf("(%i, %i) -> [%i][%i]: %s\n", c.first, c.second, int_idx, opposite_side(int_idx), current[int_idx].c_str());
+        }
+        
+        return true;
     }
+
+    std::vector<std::pair<int, int>> check_coords(int x, int y, size_t max) const
+    {
+        std::vector<std::pair<int, int>> result;
+        
+        for(const auto& x_diff : {-1, 1})
+        {
+            if (is_valid(x+x_diff, y, max)) result.push_back(std::make_pair(x+x_diff, y));
+        }
+        for(const auto& y_diff : {-1, 1})
+        {
+            if (is_valid(x, y+y_diff, max)) result.push_back(std::make_pair(x, y+y_diff));
+        }
+
+        return result;
+    }
+
+    bool is_valid(int x, int y, size_t max) const
+    { return x >= 0 && x < max && y >= 0 && y < max; }
+
+    int find_interface_index(const std::pair<int, int>& coords, const std::pair<int, int>& check) const
+    {
+        const int x_diff = check.first - coords.first;
+        if (x_diff == -1) return 1;
+        if (x_diff == 1) return 3;
+        
+        const int y_diff = check.second - coords.second;
+        if (y_diff == -1) return 0;
+        if (y_diff == 1) return 2;
+
+        // Should not happen
+        return -1;
+    }
+
+    int opposite_side(int idx) const
+    { return (idx + 2) % 4; }
 
 private:
     std::string _filename;
