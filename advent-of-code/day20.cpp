@@ -1,13 +1,12 @@
 ﻿#include <string>
 #include <istream>
 #include <fstream>
-#include <sstream>
 #include <vector>
 #include <map>
 #include <tuple>
 #include <algorithm>
 
-typedef std::tuple<int, int, int, int> tilesides;
+typedef std::tuple<std::string, std::string, std::string, std::string> bounds;
 
 class Day20
 {
@@ -28,7 +27,7 @@ public:
         {
             if (line.size() <= 0)
             {
-                _tiles.insert(parse_tile(raw));
+                _combine.insert(parse_tile(raw));
                 raw.clear();
             }
             else
@@ -37,64 +36,142 @@ public:
             }
         }
 
-        _tiles.insert(parse_tile(raw));
+        _combine.insert(parse_tile(raw));
     }
 
-    std::pair<int, tilesides> parse_tile(const std::vector<std::string>& raw)
+    std::pair<int, std::vector<bounds>> parse_tile(const std::vector<std::string>& raw) const
     {
-        const std::string& first = *raw.begin();
-        const size_t space = (first).find(' ');
-        int id = atoi(first.substr(space+1).c_str());
-
-        // Get sides
-        std::string left_side;
-        std::string right_side;
-        std::for_each(++raw.cbegin(), raw.cend(), [&left_side, &right_side](const std::string& s)
+        const size_t space = raw.front().find(" ");
+        const int tile_id = atoi(raw.front().substr(space+1).c_str());
+        
+        std::string left;
+        std::string right;
+        std::for_each(++raw.begin(), raw.end(), [&left, &right](const std::string& elem)
         {
-            left_side += *s.begin();
-            right_side += *(--s.end());
+            left += elem.front();
+            right += elem.back();
         });
         
-        return std::make_pair(id, std::make_tuple(
-            get_hashed_side(*(++raw.begin())),
-            get_hashed_side(left_side),
-            get_hashed_side(right_side),
-            get_hashed_side(*(--raw.end()))
-        ));
+        const bounds first_bound = std::make_tuple(*(++raw.begin()), left, *(--raw.end()), right);
+        return std::make_pair(tile_id, find_permutations(first_bound));
     }
 
-    int get_hashed_side(const std::string& data)
+    std::vector<bounds> find_permutations(const bounds& first) const
     {
-        int hash = 0;
-        for(auto it = data.begin(); it != data.end(); ++it)
-        {
-            hash = hash << 1;
-            hash += (*it == '#') ? 1 : 0;
-        }
+        std::vector<bounds> result;
+        result.push_back(first);
 
-        _hashes[hash]++;
-        return hash;
-    }
+        // Rotations
+        result.push_back(std::make_tuple(
+            std::get<1>(first), std::get<2>(first), std::get<3>(first), std::get<0>(first)));
+        result.push_back(std::make_tuple(
+            std::get<2>(first), std::get<3>(first), std::get<0>(first), std::get<1>(first)));
+        result.push_back(std::make_tuple(
+            std::get<3>(first), std::get<0>(first), std::get<1>(first), std::get<2>(first)));
 
-    void print_tiles() const
-    {
-        for(const auto& tile : _tiles)
+        // Flips
+        std::vector<bounds> flips;
+        std::for_each(result.begin(), result.end(), [&flips](const bounds& b)
         {
-            printf("%i ====\n", tile.first);
+            std::string rev_top = std::get<0>(b);
+            std::reverse(rev_top.begin(), rev_top.end());
+            std::string rev_left = std::get<1>(b);
+            std::reverse(rev_left.begin(), rev_left.end());
+            std::string rev_bottom = std::get<2>(b);
+            std::reverse(rev_bottom.begin(), rev_bottom.end());
+            std::string rev_right = std::get<3>(b);
+            std::reverse(rev_right.begin(), rev_right.end());
             
-            printf("\t top -> %i [%i]\n", std::get<0>(tile.second), _hashes.at(std::get<0>(tile.second)));
-            printf("\t left -> %i [%i]\n", std::get<1>(tile.second), _hashes.at(std::get<1>(tile.second)));
-            printf("\t right -> %i [%i]\n", std::get<2>(tile.second), _hashes.at(std::get<2>(tile.second)));
-            printf("\t bottom -> %i [%i]\n", std::get<3>(tile.second), _hashes.at(std::get<3>(tile.second)));
+            flips.push_back(std::make_tuple(
+                std::get<2>(b), rev_left, std::get<0>(b), rev_right));
+            flips.push_back(std::make_tuple(
+                rev_top, std::get<3>(b), rev_bottom, std::get<1>(b)));
+            flips.push_back(std::make_tuple(
+                rev_left, rev_top, rev_right, rev_bottom));
+            flips.push_back(std::make_tuple(
+                rev_right, rev_bottom, rev_left, rev_top));
+        });
+
+        result.reserve(result.size() + flips.size());
+        result.insert(result.end(), flips.begin(), flips.end());
+        
+        return result;
+    }
+
+    void print_tiles(int tile_id) const
+    {
+        const std::vector<bounds>& selected = _combine.at(tile_id);
+        
+        printf("ID: %i\n", tile_id);
+        std::for_each(selected.begin(), selected.end(), [](const bounds& b)
+        {
+            printf("TOP => %s\n", std::get<0>(b).c_str());
+            printf("LEFT => %s\n", std::get<1>(b).c_str());
+            printf("BOTTOM =>%s\n", std::get<2>(b).c_str());
+            printf("RIGHT =>%s\n", std::get<3>(b).c_str());
             printf("\n");
+        });
+    }
+
+    std::vector<int> get_tile_ids() const
+    {
+        std::vector<int> result;
+        std::transform(_combine.begin(), _combine.end(), std::back_inserter(result), [](const auto& a)
+        {
+            return a.first;
+        });
+
+        return result;
+    }
+
+    std::vector<std::vector<bounds>> find_arrangement() const
+    {
+        std::vector<std::vector<bounds>> result;
+        const size_t count = static_cast<size_t>(sqrt(_combine.size()));
+        
+        for(size_t i = 0; i < count; i++)
+        {
+            std::vector<bounds> temp;
+            for(size_t j = 0; j < count; j++)
+            {
+                temp.push_back(std::make_tuple("", "", "", ""));
+            }
+            result.push_back(temp);
         }
+
+        std::vector<int> used_tiles;
+
+        for(const auto& t : _combine)
+        {
+            used_tiles.push_back(t.first);
+
+            for(const auto& b : t.second)
+            {
+                result[0][0] = b;
+                
+                const auto temp = find_arrangement_impl(result, used_tiles, 1, 0);
+                if (used_tiles.size() == _combine.size())
+                {
+                    return temp;
+                }
+            }
+            
+            used_tiles.clear();
+        }
+
+        return result;
+    }
+
+    std::vector<std::vector<bounds>> find_arrangement_impl(std::vector<std::vector<bounds>>& partial, std::vector<int>& used_tiles, int x, int y) const
+    {
+        printf("[0][0] = %i [%lld]\n", used_tiles[0], used_tiles.size());
+        return partial;
     }
 
 private:
     std::string _filename;
 
-    std::map<int, tilesides> _tiles; // ID => [hashes] top, left, bottom,  right
-    // hash = binary representation of the sides, compare between them to find matches
-    // hash idea doesn't work, look into something else, so we can handle rotations better...
-    std::map<int, int> _hashes;
+    std::map<int, std::vector<bounds>> _combine;
+    // All possible bounds for each tile, mapped to the tile id, front is OG tile setup
+    // Each entry in combine bounds is in this order: top, left, bottom, right
 };

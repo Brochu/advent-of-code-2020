@@ -211,7 +211,12 @@ int main(int argc, char* argv[])
 
     // Day 20
     Day20 d(argv[1]);
-    d.print_tiles();
+    //for(const auto& e : d.get_tile_ids())
+    //{
+    //    printf("TILE #%i\n", e);
+    //    d.print_tiles(e);
+    //}
+    const auto result = d.find_arrangement();
     
     return 0;
 }
