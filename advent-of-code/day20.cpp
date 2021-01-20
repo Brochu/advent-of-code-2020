@@ -3,10 +3,20 @@
 #include <fstream>
 #include <vector>
 #include <map>
-#include <array>
+#include <set>
+#include <iterator>
 #include <algorithm>
 
-typedef std::array<std::string, 4> bounds;
+typedef std::vector<std::string> Tile;
+typedef std::vector<std::pair<int, std::vector<std::string>>>::iterator Tile_Ptr;
+
+enum Sides
+{
+    TOP = 0,
+    LEFT,
+    BOTTOM,
+    RIGHT
+};
 
 class Day20
 {
@@ -22,187 +32,218 @@ public:
     {
         std::string line;
         std::vector<std::string> raw;
-        
+
         while(std::getline(stream, line))
         {
-            if (line.size() <= 0)
-            {
-                _combine.insert(parse_tile(raw));
-                raw.clear();
-            }
-            else
-            {
-                raw.push_back(line);
-            }
+            raw.push_back(line);
         }
 
-        _combine.insert(parse_tile(raw));
-    }
+        // Split tiles
+        auto start = raw.cbegin();
+        auto end = raw.cbegin();
 
-    std::pair<int, std::vector<bounds>> parse_tile(const std::vector<std::string>& raw) const
-    {
-        const size_t space = raw.front().find(" ");
-        const int tile_id = atoi(raw.front().substr(space+1).c_str());
-        
-        std::string left;
-        std::string right;
-        std::for_each(++raw.begin(), raw.end(), [&left, &right](const std::string& elem)
+        while(start != raw.cend())
         {
-            left += elem.front();
-            right += elem.back();
-        });
-        
-        const bounds first_bound = { *(++raw.begin()), left, *(--raw.end()), right };
-        return std::make_pair(tile_id, find_permutations(first_bound));
-    }
-
-    std::vector<bounds> find_permutations(const bounds& first) const
-    {
-        std::vector<bounds> result;
-        result.push_back(first);
-
-        // Rotations
-        result.push_back({ first[1], first[2], first[3], first[0] });
-        result.push_back({ first[2], first[3], first[0], first[1] });
-        result.push_back({ first[3], first[0], first[1], first[2] });
-
-        // Flips
-        std::vector<bounds> flips;
-        std::for_each(result.begin(), result.end(), [&flips](const bounds& b)
-        {
-            std::string rev_top = b[0];
-            std::reverse(rev_top.begin(), rev_top.end());
-            std::string rev_left = b[1];
-            std::reverse(rev_left.begin(), rev_left.end());
-            std::string rev_bottom = b[2];
-            std::reverse(rev_bottom.begin(), rev_bottom.end());
-            std::string rev_right = b[3];
-            std::reverse(rev_right.begin(), rev_right.end());
+            end = std::find(start, raw.cend(), "");
             
-            flips.push_back({ b[2], rev_left, b[0], rev_right });
-            flips.push_back({ rev_top, b[3], rev_bottom, b[1] });
-            flips.push_back({ rev_left, rev_top, rev_right, rev_bottom });
-            flips.push_back({ rev_right, rev_bottom, rev_left, rev_top });
-        });
+            const int tile_id = atoi((*start).substr((*start).find(' ')).c_str());
+            const Tile t(start+1, end);
+            _tiles[tile_id] = t;
+            enum_rotations(tile_id, t);
 
-        result.reserve(result.size() + flips.size());
-        result.insert(result.end(), flips.begin(), flips.end());
-        
-        return result;
-    }
-
-    void print_tiles(int tile_id) const
-    {
-        const std::vector<bounds>& selected = _combine.at(tile_id);
-        
-        printf("ID: %i\n", tile_id);
-        std::for_each(selected.begin(), selected.end(), [](const bounds& b)
-        {
-            printf("TOP => %s\n", std::get<0>(b).c_str());
-            printf("LEFT => %s\n", std::get<1>(b).c_str());
-            printf("BOTTOM =>%s\n", std::get<2>(b).c_str());
-            printf("RIGHT =>%s\n", std::get<3>(b).c_str());
-            printf("\n");
-        });
-    }
-
-    std::vector<int> get_tile_ids() const
-    {
-        std::vector<int> result;
-        std::transform(_combine.begin(), _combine.end(), std::back_inserter(result), [](const auto& a)
-        {
-            return a.first;
-        });
-
-        return result;
-    }
-
-    std::vector<std::vector<bounds>> find_arrangement() const
-    {
-        const size_t count = static_cast<size_t>(sqrt(_combine.size()));
-        
-        std::vector<std::vector<bounds>> result(count);
-        for(auto& b : result)
-        {
-            b = std::vector<bounds>(count);
+            start = (end != raw.cend()) ? end+1 : end;
         }
-        
-        std::vector<int> used_tiles;
+    }
 
-        for(const auto& t : _combine)
+    void enum_rotations(int id, const Tile& t)
+    {
+        _all.push_back(std::make_pair(id, t));
+        _all.push_back(std::make_pair(id, rotate(_all.back().second)));
+        _all.push_back(std::make_pair(id, rotate(_all.back().second)));
+        _all.push_back(std::make_pair(id, rotate(_all.back().second)));
+
+        _all.push_back(std::make_pair(id, reflectX(t)));
+        _all.push_back(std::make_pair(id, reflectY(t)));
+        _all.push_back(std::make_pair(id, transpose(t)));
+        _all.push_back(std::make_pair(id, reflectDiag(t)));
+    }
+
+    Tile rotate (Tile t)
+    {
+        const auto& cycle = [](char& a, char& b, char& c, char& d)
         {
-            used_tiles.push_back(t.first);
+           const int temp = a;
+           a = b;
+           b = c;
+           c = d;
+           d = temp;
+        };
+        
+        for(int i=0; i < _n/2; i++)
+            for(int j=0; j < (_n+1)/2; j++)
+                cycle(t[i][j], t[_n-1-j][i], t[_n-1-i][_n-1-j], t[j][_n-1-i]);
 
-            for(const auto& b : t.second)
+        return t;
+    }
+
+    Tile reflectX(Tile t)
+    {
+        for(size_t i = 0; i < _n; ++i)
+        {
+            for(size_t j = 0; j < _n/2; ++j)
             {
-                result[0][0] = b;
-                if (find_arrangement_impl(result, used_tiles))
-                {
-                    return result;
-                }
+                const char temp = t[i][j];
+                t[i][j] = t[i][_n-j-1];
+                t[i][_n-j-1] = temp;
+            }
+        }
+        return t;
+    }
+    
+    Tile reflectY(Tile t)
+    {
+        for(size_t i = 0; i < _n/2; ++i)
+        {
+            for(size_t j = 0; j < _n; ++j)
+            {
+                const char temp = t[i][j];
+                t[i][j] = t[_n-i-1][j];
+                t[_n-i-1][j] = temp;
+            }
+        }
+        return t;
+    }
+
+    Tile transpose(Tile t)
+    {
+        Tile result(t);
+        
+        for(size_t i = 0; i < _n; ++i)
+            for(size_t j = 0; j < _n; ++j)
+                result[i][j] = t[j][i];
+        
+        return result;
+    }
+    
+    Tile reflectDiag(Tile t)
+    {
+        for (int i = 0; i < (_n - 1); i++)
+        {
+            for (int j = 0; j < (_n - 1) - i; j++)
+            {
+                int tmp = t[i][j];
+                t[i][j] = t[(_n - 1) - j][(_n - 1) - i];
+                t[(_n - 1) - j][(_n - 1) - i] = tmp;
+            }
+        }
+        return t;
+    }
+
+    std::string get_side(const Tile& t, Sides s) const
+    {
+        std::string line;
+        
+        switch(s)
+        {
+            case TOP:
+                line = *t.begin();
+                break;
+            
+            case LEFT:
+                std::transform(t.begin(), t.end(), std::back_inserter(line), [](const std::string& s)
+                { return *s.begin(); });
+                break;
+            
+            case BOTTOM:
+                line = *(t.end()-1);
+                break;
+            
+            case RIGHT:
+                std::transform(t.begin(), t.end(), std::back_inserter(line), [](const std::string& s)
+                { return *(s.end()-1); });
+                break;
+                
+            default: return "INVALID";
+        }
+        return line;
+    }
+
+    std::vector<int> solve() const
+    {
+        const int side = static_cast<int>(sqrt(_tiles.size()));
+        
+        std::vector<size_t> result;
+        int idx = 0;
+        
+        std::set<int> available;
+        std::transform(_tiles.cbegin(), _tiles.cend(), std::inserter(available, available.end()),
+            [](const std::pair<int, Tile>& t) { return t.first; });
+        
+        for(size_t i = 0; i < _all.size(); ++i)
+        {
+            result.push_back(i);
+            available.erase(_all.at(i).first);
+
+            if (solve_impl(result, available, idx+1, side))
+            {
+                std::vector<int> ret;
+                std::transform(result.cbegin(), result.cend(), std::back_inserter(ret),
+                    [this](const size_t& val){ return _all.at(val).first; });
+                return ret;
             }
             
-            used_tiles.clear();
+            available.insert(_all.at(i).first);
+            result.pop_back();
         }
 
-        return result;
+        return {};
     }
 
-    bool find_arrangement_impl(std::vector<std::vector<bounds>>& partial, std::vector<int>& used_tiles, int x = 0, int y = 0) const
+    bool solve_impl(std::vector<size_t>& partial, std::set<int> available, int index, int side) const
     {
-        const auto to_check = check_coords(x, y, partial.size());
-        const auto origin = std::make_pair(x, y);
-        const bounds& current = partial[x][y];
-        
-        for(const auto& c : to_check)
+        for(int i = 0; i < _all.size(); ++i)
         {
-            const int int_idx = find_interface_index(origin, c);
-            printf("(%i, %i) -> [%i][%i]: %s\n", c.first, c.second, int_idx, opposite_side(int_idx), current[int_idx].c_str());
+            // Cannot use the same tile twice
+            if(available.find(_all.at(i).first) == available.end()) continue;
+            
+            if (index%side != 0)
+            {
+                // Compare t's left with index-1's right
+                const std::string& t_left = get_side(_all.at(i).second, Sides::LEFT);
+                const std::string& prev_right = get_side(_all.at(partial[index-1]).second, Sides::RIGHT);
+
+                if (t_left != prev_right) continue;
+            }
+            
+            if (index >= side)
+            {
+                // Compare t's top with index-side's bottom
+                const std::string& t_top = get_side(_all.at(i).second, Sides::TOP);
+                const std::string& prev_bottom = get_side(_all.at(partial[index-side]).second, Sides::BOTTOM);
+
+                if (t_top != prev_bottom) continue;
+            }
+
+            partial.push_back(i);
+            available.erase(_all.at(i).first);
+
+            if (available.size() == 0) return true;
+
+            if (solve_impl(partial, available, index+1, side))
+            {
+                return true;
+            }
+            
+            available.insert(_all.at(i).first);
+            partial.pop_back();
         }
-        
-        return true;
+        return false;
     }
-
-    std::vector<std::pair<int, int>> check_coords(int x, int y, size_t max) const
-    {
-        std::vector<std::pair<int, int>> result;
-        
-        for(const auto& x_diff : {-1, 1})
-        {
-            if (is_valid(x+x_diff, y, max)) result.push_back(std::make_pair(x+x_diff, y));
-        }
-        for(const auto& y_diff : {-1, 1})
-        {
-            if (is_valid(x, y+y_diff, max)) result.push_back(std::make_pair(x, y+y_diff));
-        }
-
-        return result;
-    }
-
-    bool is_valid(int x, int y, size_t max) const
-    { return x >= 0 && x < max && y >= 0 && y < max; }
-
-    int find_interface_index(const std::pair<int, int>& coords, const std::pair<int, int>& check) const
-    {
-        const int x_diff = check.first - coords.first;
-        if (x_diff == -1) return 1;
-        if (x_diff == 1) return 3;
-        
-        const int y_diff = check.second - coords.second;
-        if (y_diff == -1) return 0;
-        if (y_diff == 1) return 2;
-
-        // Should not happen
-        return -1;
-    }
-
-    int opposite_side(int idx) const
-    { return (idx + 2) % 4; }
 
 private:
     std::string _filename;
 
-    std::map<int, std::vector<bounds>> _combine;
-    // All possible bounds for each tile, mapped to the tile id, front is OG tile setup
-    // Each entry in combine bounds is in this order: top, left, bottom, right
+    const size_t _n = 10;
+    std::map<int, Tile> _tiles;
+    std::vector<std::pair<int, Tile>> _all;
 };

@@ -211,12 +211,18 @@ int main(int argc, char* argv[])
 
     // Day 20
     Day20 d(argv[1]);
-    //for(const auto& e : d.get_tile_ids())
-    //{
-    //    printf("TILE #%i\n", e);
-    //    d.print_tiles(e);
-    //}
-    const auto result = d.find_arrangement();
+    const auto result = d.solve();
+    const int offset = static_cast<int>(sqrt(result.size())) - 1;
     
+    const size_t corner1 = result.front();
+    const size_t corner2 = *(result.begin()+offset);
+    const size_t corner3 = *(result.rbegin()+offset);
+    const size_t corner4 = result.back();
+
+    const size_t total = corner1 * corner2 * corner3 * corner4;
+
+    printf("corners: (%lld, %lld, %lld, %lld)\n", corner1, corner2, corner3, corner4);
+    printf("total = %lld\n", total);
+
     return 0;
 }
