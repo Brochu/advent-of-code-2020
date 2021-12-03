@@ -105,23 +105,8 @@ int main(int argc, char** argv)
     }
     printf("co2 = %s\n", co2Vals[0].c_str());
 
-    int oxyVal = 0;
-    int co2Val = 0;
-    for (int i = 0; i < oxyVals[0].size(); i++)
-    {
-        oxyVal = oxyVal << 1;
-        co2Val = co2Val << 1;
-
-        if (oxyVals[0][i] == '1')
-        {
-            oxyVal++;
-        }
-
-        if (co2Vals[0][i] == '1')
-        {
-            co2Val++;
-        }
-    }
+    int oxyVal = std::stoi(oxyVals[0], nullptr, 2);
+    int co2Val = std::stoi(co2Vals[0], nullptr, 2);
 
     printf("oxy = %i; co2 = %i\n", oxyVal, co2Val);
     printf("result = %i\n", oxyVal * co2Val);
