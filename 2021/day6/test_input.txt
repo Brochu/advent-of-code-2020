@@ -1,5 +1,1 @@
-THIS
-IS
-TEST
-INPUT
-
+3,4,3,1,2
