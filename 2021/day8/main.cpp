@@ -1,11 +1,22 @@
 #include <algorithm>
 #include <climits>
 #include <fstream>
+#include <math.h>
 #include <numeric>
 #include <string>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
+
+static short segMap[] {
+    1 << 0, //a
+    1 << 1, //b
+    1 << 2, //c
+    1 << 3, //d
+    1 << 4, //e
+    1 << 5, //f
+    1 << 6, //g
+};
 
 int countEasyNums(std::string raw)
 {
@@ -25,138 +36,181 @@ int countEasyNums(std::string raw)
     return count;
 }
 
+short segmentsToShort(const std::string& segments)
+{
+    short result = 0;
+
+    for (const char& c : segments)
+        result |= segMap[c - 'a'];
+
+    return result;
+}
+
+int countSetBits(short num)
+{
+    int count = 0;
+
+    while(num)
+    {
+        num &= (num-1);
+        count++;
+    }
+
+    return count;
+}
+
 struct Entry
 {
-    std::unordered_map<int, std::vector<std::string>> hints;
-    std::vector<std::string> nums;
+    std::unordered_map<int, std::vector<short>> hints;
+    std::unordered_map<short, int> lutNums;
+    std::vector<short> nums;
 };
-void parseHints(const std::string& raw, std::unordered_map<int, std::vector<std::string>>& table)
+void parseHints(const std::string& raw, Entry& e)
 {
     std::stringstream ss(raw);
     std::string current;
 
     while(std::getline(ss, current, ' '))
-    {
-        table[current.length()].push_back(current);
-    }
+        e.hints[current.length()].push_back(segmentsToShort(current));
 }
-void parseList(const std::string& raw, std::vector<std::string>& destination)
+void parseList(const std::string& raw, Entry& e)
 {
     std::stringstream ss(raw);
     std::string current;
 
     while(std::getline(ss, current, ' '))
-    {
-        destination.push_back(current);
-    }
+        e.nums.push_back(segmentsToShort(current));
 }
 Entry parseEntry(std::string raw)
 {
     Entry e;
     size_t idx = raw.find('|');
 
-    parseHints(raw.substr(0, idx), e.hints);
-    //std::sort(e.hints.begin(), e.hints.end(), [](const std::string& l, const std::string& r)
-    //{
-    //    return l.length() < r.length();
-    //});
-    parseList(raw.substr(idx + 2), e.nums);
+    parseHints(raw.substr(0, idx), e);
+    parseList(raw.substr(idx + 2), e);
 
     return e;
 }
 
-void findSixSegments(
-    std::vector<std::string> potentials,
-    const std::vector<std::string>& known,
-    std::string& outSix,
-    std::string& outNine,
-    std::string& outZero
-)
+short findSixSegStrategy(std::vector<short>& potentials, short cmp)
 {
+    short result = 0;
+
     auto it = potentials.begin();
-    for(; it != potentials.end(); it++)
+    for (;it != potentials.end(); it++)
     {
-        for(const char& c : known[7])
+        if ((*it & cmp) == cmp)
         {
-            if ((*it).find(c) == std::string::npos)
-            {
-                outSix = *it;
-                break;
-            }
+            result = *it;
+            break;
         }
     }
     potentials.erase(it);
+
+    return result;
 }
 
-int calcNums(Entry& e)
+void findSixSegments(std::vector<short> potentials, short four, short seven, short& outSix, short& outNine, short& outZero)
 {
-    printf("[Calc] -> \n");
-    printf("hints: ");
-    // KNOWN
-    std::vector<std::string> known(10);
+    outNine = findSixSegStrategy(potentials, four);
+    outZero = findSixSegStrategy(potentials, seven);
+    outSix = potentials.front();
 
-    auto eight = e.hints.at(7).front();
-    std::sort(eight.begin(), eight.end());
-    known[8] = eight;
+    //printf("Found nine = %i\n", outNine);
+    //printf("Found zero = %i\n", outZero);
+    //printf("Found six = %i\n", outSix);
+}
 
-    auto one = e.hints.at(2).front();
-    std::sort(one.begin(), one.end());
-    known[1] = one;
+short findFiveSegStrategy(std::vector<short>& potentials, short cmp)
+{
+    short result = 0;
 
-    auto four = e.hints.at(4).front();
-    std::sort(four.begin(), four.end());
-    known[4] = four;
-
-    auto seven = e.hints.at(3).front();
-    std::sort(seven.begin(), seven.end());
-    known[7] = seven;
-    printf("8->%s; 1->%s; 4->%s; 7->%s", eight.c_str(), one.c_str(), four.c_str(), seven.c_str());
-
-    // 6 segments unknown
-    printf("\nFind zero, six, nine\n");
-    std::string six;
-    std::string nine;
-    std::string zero;
-    findSixSegments(e.hints[6], known, six, nine, zero);
-    printf("6->%s; 9->%s; 0->%s\n", six.c_str(), nine.c_str(), zero.c_str());
-
-    printf("\nFind two, three, five\n");
-    for(const std::string& s : e.hints.at(5))
+    auto it = potentials.begin();
+    for (;it != potentials.end(); it++)
     {
-        printf("%s ; ", s.c_str());
+        if (countSetBits(*it & cmp) == 2)
+        {
+            result = *it;
+            break;
+        }
     }
-    printf("\n");
+    potentials.erase(it);
 
-    //printf("nums: ");
-    //for(const std::string& n : e.nums)
+    return result;
+}
+
+void findFiveSegments(std::vector<short> potentials, short four, short seven, short& outTwo, short& outThree, short& outFive)
+{
+    outThree = findSixSegStrategy(potentials, seven);
+    outTwo = findFiveSegStrategy(potentials, four);
+    outFive = potentials.front();
+
+    //printf("Found three = %i\n", outThree);
+    //printf("Found two = %i\n", outTwo);
+    //printf("Found five = %i\n", outFive);
+}
+
+void calcNums(Entry& e)
+{
+    //printf("[Calc] -> \n");
+    //printf("hints: ");
+    //for (int i = 2; i <= 7; i++)
     //{
-    //    printf("%s,", n.c_str());
+    //    for (const short h : e.hints[i])
+    //    {
+    //        printf("%i , ", h);
+    //    }
     //}
     //printf("\n");
+    e.lutNums[e.hints[2].front()] = 1;
+    e.lutNums[e.hints[3].front()] = 7;
+    e.lutNums[e.hints[4].front()] = 4;
+    e.lutNums[e.hints[7].front()] = 8;
 
-    return 0;
+    short six, nine, zero = 0;
+    findSixSegments(e.hints[6], e.hints[4].front(), e.hints[3].front(), six, nine, zero);
+    e.lutNums[six] = 6;
+    e.lutNums[nine] = 9;
+    e.lutNums[zero] = 0;
+
+    //printf("\n");
+
+    short two, three, five = 0;
+    findFiveSegments(e.hints[5], e.hints[4].front(), e.hints[3].front(), two, three, five);
+    e.lutNums[two] = 2;
+    e.lutNums[three] = 3;
+    e.lutNums[five] = 5;
 }
 
 static std::string testPath = "./test_input.txt";
 static std::string path = "./input.txt";
 int main(int argc, char** argv)
 {
-    auto file = std::ifstream(testPath);
-    //auto file = std::ifstream(path);
+    //auto file = std::ifstream(testPath);
+    auto file = std::ifstream(path);
 
-    std::vector<int> nums;
+    int final = 0;
     std::string line;
     int quantity = 0;
-    std::getline(file, line);
-    //while (std::getline(file, line))
+    while (std::getline(file, line))
     {
         std::string raw = line.substr(line.find('|') + 2);
         quantity += countEasyNums(raw);
 
         Entry e = parseEntry(line);
-        nums.push_back(calcNums(e));
+        calcNums(e);
+
+        int i = 0;
+        int total = 0;
+        for (auto it = e.nums.crbegin(); it != e.nums.crend(); it++)
+        {
+            total += (int)(e.lutNums[*it] * pow(10.0, (float)i));
+            i++;
+        }
+        printf("\nResult = %i\n", total);
+        final += total;
     }
 
-    //printf("\nResult = %i\n", std::accumulate(nums.cbegin(), nums.cend(), 0));
+    printf("\nFINAL = %i\n", final);
     return 0;
 }
