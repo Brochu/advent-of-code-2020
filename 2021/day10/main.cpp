@@ -62,7 +62,7 @@ int main(int argc, char** argv)
     std::string line;
 
     int finalScore = 0;
-    std::vector<int> scoresP2;
+    std::vector<unsigned long> scoresP2;
     while (file >> line)
     {
         int score = 0;
@@ -73,14 +73,15 @@ int main(int argc, char** argv)
         }
         else
         {
-            int score = 0;
+            unsigned long score = 0;
             std::reverse(stack.begin(), stack.end());
             for (const char& c : stack)
             {
                 score *= 5;
                 score += lutScorePart2[lut[c]];
-                //printf(" %c ", lut[c]);
+                printf(" %c ", lut[c]);
             }
+            printf(" : score = %ld\n ", score);
             scoresP2.push_back(score);
         }
     }
@@ -90,6 +91,6 @@ int main(int argc, char** argv)
     std::sort(scoresP2.begin(), scoresP2.end());
     size_t idx = ((scoresP2.size()) / 2);
 
-    printf("P2 = %i, %ld, %ld\n", scoresP2[idx], scoresP2.size(), idx);
+    printf("P2 = %ld, %ld, %ld\n", scoresP2[idx], scoresP2.size(), idx);
     return 0;
 }
