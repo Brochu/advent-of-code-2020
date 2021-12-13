@@ -69,12 +69,19 @@ FlashList incrementJellies()
     return updateList;
 }
 
-void handleFlashes(const FlashList& toFlash, FlashCache& cache)
+void handleFlashes(FlashList& toFlash, size_t idx, FlashCache& cache)
 {
-}
+    const Coords c = toFlash[idx];
+    const short y = std::get<0>(c);
+    const short x = std::get<1>(c);
 
-void flashImpl(const Coords c, FlashCache& cache)
-{
+    printf("[FLASH] Handling idx = %ld; (%i, %i); %i\n", idx, y, x, jellies[y][x]);
+
+    //TODO: find a way to propagate the flashes, most likely keep adding the new ones to flash to the list ?
+    if (jellies[y][x] > 9)
+    {
+        jellies[y][x] -= 10;
+    }
 }
 
 int main(int argc, char** argv)
@@ -98,9 +105,12 @@ int main(int argc, char** argv)
     {
         FlashCache cache;
         FlashList toFlash = incrementJellies();
-
         printf("With %ld to update...\n", toFlash.size());
-        handleFlashes(toFlash, cache);
+
+        for (size_t i = 0; i < toFlash.size(); i++)
+        {
+            handleFlashes(toFlash, i, cache);
+        }
     }
     debugJellies();
 
