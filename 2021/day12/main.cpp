@@ -32,8 +32,7 @@ void buildTrieImpl(
         TrieNode* n,
         std::string name,
         std::set<std::string> cache,
-        int& count,
-        bool& first)
+        int& count)
 {
     // Check if we reached end node, if yes return
     if (name == "end")
@@ -66,7 +65,7 @@ void buildTrieImpl(
             cache.insert(*it); // Push this node in the cache if lowercase
         }
         // Call Impl with the new node
-        buildTrieImpl(linkDB, lutIndex, n->next[idx], *it, cache, count, first);
+        buildTrieImpl(linkDB, lutIndex, n->next[idx], *it, cache, count);
         if (isLower)
         {
             cache.erase(*it); // Pop this node from the cache is lowercase, we are done with this path
@@ -79,9 +78,8 @@ TrieNode buildTrie(const LinkMap& linkDB, const IndexMap& lutIndex, int& count)
     TrieNode root;
 
     std::set<std::string> cache;
-    bool first = false;
     // Recurse through to build trie
-    buildTrieImpl(linkDB, lutIndex, &root, START_NAME, cache, count, first);
+    buildTrieImpl(linkDB, lutIndex, &root, START_NAME, cache, count);
 
     return root;
 }
