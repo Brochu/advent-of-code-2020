@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <map>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -8,8 +9,8 @@
 typedef std::unordered_map<std::string, std::vector<std::string>> LinkMap;
 typedef std::unordered_map<std::string, size_t> IndexMap;
 
-#define PATH "./test_input.txt"
-//#define PATH "./input.txt"
+//#define PATH "./test_input.txt"
+#define PATH "./input.txt"
 #define MAX_NODES 20
 #define START_NAME "start"
 #define END_NAME "end"
@@ -31,7 +32,8 @@ void buildTrieImpl(
         const IndexMap& lutIndex,
         TrieNode* n,
         std::string name,
-        std::set<std::string> cache,
+        std::map<std::string, int> cache,
+        std::set<std::string> twice,
         int& count)
 {
     // Check if we reached end node, if yes return
@@ -45,9 +47,17 @@ void buildTrieImpl(
     std::vector<std::string> possible = linkDB.at(name);
 
     // Filter the possible node based on the cache
-    auto filtered = std::remove_if(possible.begin(), possible.end(), [&cache](const std::string& e)
+    auto filtered = std::remove_if(possible.begin(), possible.end(), [&cache, &twice](const std::string& e)
         {
-            return cache.find(e) != cache.end();
+            auto anyTwice = std::any_of(cache.begin(), cache.end(), [](const std::pair<std::string, int>& e)
+                {
+                    return islower(e.first[0]) && e.second > 1;
+                });
+
+            if (anyTwice)
+                return islower(e[0]) && cache[e] > 0;
+            else
+                return islower(e[0]) && cache[e] > 1;
         });
 
     printf("[TRIE] Continue with all valid options: \n");
@@ -60,21 +70,10 @@ void buildTrieImpl(
         // Create a new node at the right index of the array
         n->next[idx] = new TrieNode();
 
-        //TODO: Change cache to maps string->int
-        //TODO: Add another layer of cache for caves used twice
-        //TODO: Only let a room to be used twice if none in the cache == 2
-        //TODO: Add to new level of cache
-        //TODO: Cannot up to 2 if already in 2nd cache layer
-        if (isLower)
-        {
-            cache.insert(*it); // Push this node in the cache if lowercase
-        }
+        cache[*it]++;
         // Call Impl with the new node
-        buildTrieImpl(linkDB, lutIndex, n->next[idx], *it, cache, count);
-        if (isLower)
-        {
-            cache.erase(*it); // Pop this node from the cache is lowercase, we are done with this path
-        }
+        buildTrieImpl(linkDB, lutIndex, n->next[idx], *it, cache, twice, count);
+        cache[*it]--;
     }
 }
 
@@ -82,9 +81,10 @@ TrieNode buildTrie(const LinkMap& linkDB, const IndexMap& lutIndex, int& count)
 {
     TrieNode root;
 
-    std::set<std::string> cache;
+    std::map<std::string, int> cache;
+    std::set<std::string> twice;
     // Recurse through to build trie
-    buildTrieImpl(linkDB, lutIndex, &root, START_NAME, cache, count);
+    buildTrieImpl(linkDB, lutIndex, &root, START_NAME, cache, twice, count);
 
     return root;
 }
