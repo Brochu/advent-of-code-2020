@@ -60,6 +60,11 @@ void buildTrieImpl(
         // Create a new node at the right index of the array
         n->next[idx] = new TrieNode();
 
+        //TODO: Change cache to maps string->int
+        //TODO: Add another layer of cache for caves used twice
+        //TODO: Only let a room to be used twice if none in the cache == 2
+        //TODO: Add to new level of cache
+        //TODO: Cannot up to 2 if already in 2nd cache layer
         if (isLower)
         {
             cache.insert(*it); // Push this node in the cache if lowercase
