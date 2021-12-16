@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <set>
 #include <string>
@@ -10,35 +11,79 @@ typedef std::unordered_map<std::string, size_t> IndexMap;
 #define PATH "./test_input.txt"
 //#define PATH "./input.txt"
 #define MAX_NODES 20
+#define START_NAME "start"
+#define END_NAME "end"
 
 struct TrieNode
 {
     TrieNode() : isEnd(false)
     {
+        for (int i = 0; i < MAX_NODES; i++)
+            this->next[i] = nullptr;
     }
 
     TrieNode* next[MAX_NODES];
     bool isEnd;
 };
 
-TrieNode buildTrie(const LinkMap& linkDB, const IndexMap& lutIndex)
+void buildTrieImpl(
+        const LinkMap& linkDB,
+        const IndexMap& lutIndex,
+        TrieNode* n,
+        std::string name,
+        std::set<std::string> cache,
+        int& count,
+        bool& first)
+{
+    // Check if we reached end node, if yes return
+    if (name == "end")
+    {
+        count++;
+        return;
+    }
+
+    // Get all possible next's
+    std::vector<std::string> possible = linkDB.at(name);
+
+    // Filter the possible node based on the cache
+    auto filtered = std::remove_if(possible.begin(), possible.end(), [&cache](const std::string& e)
+        {
+            return cache.find(e) != cache.end();
+        });
+
+    printf("[TRIE] Continue with all valid options: \n");
+    for (auto it = possible.begin(); it != filtered; it++)
+    {
+        const size_t idx = lutIndex.at(*it);
+        const bool isLower = islower((*it)[0]);
+        printf("%s[%ld][%s]\n", it->c_str(), idx, isLower ? "lower" : "upper");
+
+        // Create a new node at the right index of the array
+        n->next[idx] = new TrieNode();
+
+        if (isLower)
+        {
+            cache.insert(*it); // Push this node in the cache if lowercase
+        }
+        // Call Impl with the new node
+        buildTrieImpl(linkDB, lutIndex, n->next[idx], *it, cache, count, first);
+        if (isLower)
+        {
+            cache.erase(*it); // Pop this node from the cache is lowercase, we are done with this path
+        }
+    }
+}
+
+TrieNode buildTrie(const LinkMap& linkDB, const IndexMap& lutIndex, int& count)
 {
     TrieNode root;
 
-    // Init next for root
-    for (int i = 0; i < MAX_NODES; i++) root.next[i] = nullptr;
+    std::set<std::string> cache;
+    bool first = false;
     // Recurse through to build trie
+    buildTrieImpl(linkDB, lutIndex, &root, START_NAME, cache, count, first);
 
     return root;
-}
-
-//TODO: Add a set passed by copy that will keep the nodes visited by depth, to avoid lowercase more than once
-void buildTrieImpl(TrieNode* n/*, ... */)
-{
-    //TODO: Check if we reached end node, if yes return
-    //TODO: Get all possible next's
-    //TODO: Create a new node at the right index of the array
-    //TODO: Call Impl with the new node
 }
 
 int main(int argc, char** argv)
@@ -47,6 +92,8 @@ int main(int argc, char** argv)
     LinkMap linkDB;
     size_t index = 0;
     IndexMap lutIndex;
+
+    int count = 0;
     std::set<std::string> nodes;
 
     std::string line;
@@ -56,10 +103,18 @@ int main(int argc, char** argv)
         const size_t idx = line.find('-');
         from = line.substr(0, idx);
         to = line.substr(idx + 1);
+        //printf("* %s -> %s\n", from.c_str(), to.c_str());
 
-        printf("* %s -> %s\n", from.c_str(), to.c_str());
+        if (from != START_NAME && from != END_NAME && to != START_NAME && to != END_NAME)
+        {
+            linkDB[from].push_back(to);
+            linkDB[to].push_back(from);
+        }
+        else if (to == START_NAME || from == END_NAME)
+            linkDB[to].push_back(from);
+        else
+            linkDB[from].push_back(to);
 
-        linkDB[from].push_back(to);
         if (nodes.find(from) == nodes.end())
         {
             nodes.insert(from);
@@ -70,26 +125,26 @@ int main(int argc, char** argv)
             nodes.insert(to);
             lutIndex[to] = index++;
         }
-
-        if (from != "start")
-        {
-            linkDB[to].push_back(from);
-        }
     }
 
-    //printf("\nNode count = %ld\n", nodes.size());
-    //for (const std::string& n : nodes)
+    printf("\nNode count = %ld\n", nodes.size());
+    for (const std::string& n : nodes)
+    {
+        printf("[%ld] Node %s :", lutIndex[n], n.c_str());
+        for (const std::string& link : linkDB[n])
+        {
+            printf("%s, ", link.c_str());
+        }
+        printf("\n");
+    }
+    printf("\n");
+
+    TrieNode root = buildTrie(linkDB, lutIndex, count);
+    //for (int i = 0; i < MAX_NODES; i++)
     //{
-    //    printf("[%ld] Node %s :", lutIndex[n], n.c_str());
-    //    for (const std::string& link : linkDB[n])
-    //    {
-    //        printf("%s, ", link.c_str());
-    //    }
-    //    printf("\n");
+    //    printf("-> %s\n", root.next[i] == nullptr ? "NULL" : "NOT NULL");
     //}
 
-    TrieNode root = buildTrie(linkDB, lutIndex);
-
-    //printf("Result = %i\n", 1337);
+    printf("Result = %i\n", count);
     return 0;
 }
