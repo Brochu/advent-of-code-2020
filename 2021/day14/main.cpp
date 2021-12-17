@@ -1,23 +1,24 @@
+#include <algorithm>
 #include <fstream>
 #include <map>
 #include <string>
 #include <vector>
 
-#define PATH "./test_input.txt"
-//#define PATH "./input.txt"
+//#define PATH "./test_input.txt"
+#define PATH "./input.txt"
 
-#define STEPS 10
+#define STEPS 20
 #define WINDOW 2
 
-std::map<size_t, char> expandStep(const std::string& start, std::map<std::string, char>& rules)
+std::map<size_t, char> expandStep(const std::string& start, std::map<std::string, char>& rules, std::vector<size_t>& counts)
 {
     std::map<size_t, char> queuedInsert;
-    size_t offset = 0;
+    int offset = 0;
 
-    for (size_t i = 0; (i + WINDOW) < start.size(); i++)
+    for (int i = 0; (i + WINDOW-1) < start.size(); i++)
     {
         std::string current;
-        for (size_t j = 0; j < WINDOW; j++)
+        for (int j = 0; j < WINDOW; j++)
         {
             current += start[i+j];
         }
@@ -51,45 +52,36 @@ int main(int argc, char** argv)
             start = line;
     }
 
-    printf("[START] %s\n", start.c_str());
+    printf("[START][%ld] '%s'\n", start.length(), start.c_str());
     //for (const std::pair<std::string, char>& r : rules)
     //{
     //    printf("[RULE] %s : %c\n", r.first.c_str(), r.second);
     //}
 
+    std::vector<size_t> counts(26, 0);
+    for (const char& c : start)
+    {
+        if (c >= 'A')
+            counts[c - 'A']++;
+    }
+
     for (int i = 0; i < STEPS; i++)
     {
-        auto inserts = expandStep(start, rules);
+        auto inserts = expandStep(start, rules, counts);
         for (const std::pair<size_t, char>& ins : inserts)
         {
             start.insert(ins.first, 1, ins.second);
+            counts[ins.second - 'A']++;
         }
-    }
-    printf("[After %i steps] %ld\n", STEPS, start.length());
 
-    std::map<char, size_t> counts;
-    for (const char& c : start)
-    {
-        if (c > 'A')
-            counts[c]++;
+        printf("[step %i][%ld]\n", i, start.length());
     }
 
-    size_t min = 1000;
-    size_t max = 0;
-    for (const std::pair<char, size_t>& p : counts)
-    {
-        printf("%c - %ld\n", p.first, p.second);
-        if (p.second > max)
-        {
-            max = p.second;
-        }
-        if (p.second < min)
-        {
-            min = p.second;
-        }
-    }
+    //auto end = std::remove_if(counts.begin(), counts.end(), [](const size_t& e){ return e <= 0; });
+    //auto minmax = std::minmax_element(counts.begin(), end);
+    //printf("min = %ld; max = %ld\n", *minmax.first, *minmax.second);
 
-    size_t count = max - min;
-    printf("\nmin = %ld, max = %ld, Result = %ld\n", min, max, count);
+    //size_t count = *minmax.second - *minmax.first;
+    //printf("\nResult = %ld\n", count);
     return 0;
 }
