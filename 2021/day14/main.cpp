@@ -9,7 +9,7 @@
 //#define PATH "./test_input.txt"
 #define PATH "./input.txt"
 
-#define STEPS 10
+#define STEPS 40
 #define WINDOW 2
 
 //TODO: Remember this, what is needed to use custom type as key for unordered containers
@@ -102,9 +102,10 @@ int main(int argc, char** argv)
         else
         {
             std::string start = line;
-            for (int i = 0; i + WINDOW + 1<= start.size(); i++)
+            for (int i = 0; i + WINDOW <= start.size(); i++)
             {
-                pair_fr.emplace(Pair{start[i], start[i+1]}, 1);
+                //printf("[%i] '%c%c'\n", i, start[i], start[i+1]);
+                pair_fr[Pair{start[i], start[i+1]}]++;
                 char_fr[start[i] - 'A']++;
             }
             char_fr[start[start.size()-1] - 'A']++;
@@ -114,8 +115,6 @@ int main(int argc, char** argv)
     debugPairFr(pair_fr);
     printf("\n");
     debugCharFr(char_fr);
-    printf("\n");
-    debugRules(rules);
 
     for (int i = 0; i < STEPS; i++)
     {
@@ -124,10 +123,10 @@ int main(int argc, char** argv)
     debugCharFr(char_fr);
 
     auto end = std::remove_if(char_fr.begin(), char_fr.end(), [](const uint64_t& e){ return e == 0; });
-    for (auto it = char_fr.begin(); it != end; it++)
-    {
-        printf("%ld\n", *it);
-    }
+    //for (auto it = char_fr.begin(); it != end; it++)
+    //{
+    //    printf("%ld\n", *it);
+    //}
     auto res = std::minmax_element(char_fr.begin(), end);
 
     printf("min = %ld, max = %ld\n", *res.first, *res.second);
