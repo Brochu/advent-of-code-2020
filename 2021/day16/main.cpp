@@ -7,6 +7,8 @@
 #define PATH "./test_input.txt"
 //#define PATH "./input.txt"
 
+unsigned int parsePacket(const std::string& packet, int& pos);
+
 static std::unordered_map<char, short> lutHex
 {
     { '0', 0 },
@@ -139,9 +141,32 @@ std::bitset<15> fetchSubPackInfo(const std::string& packet, int& pos)
 
     int group = pos / 4;
     int idx = pos % 4;
+    int left = 15;
     printf("[SubPackInfo] group: %i, index: %i\n", group, idx);
 
+    // First part
+    left -= (4 - idx);
+    subPackInfo |= lutHex[packet[group]] & lutMask[4 - idx];
 
+    while (left > 4)
+    {
+        group++;
+
+        subPackInfo <<= 4;
+        subPackInfo |= lutHex[packet[group]];
+
+        left -= 4;
+    }
+
+    if (left > 0)
+    {
+        group++;
+
+        subPackInfo <<= left;
+        subPackInfo |= (lutHex[packet[group]] >> (4 - left));
+    }
+
+    printf("[SubPackInfo]%s\n", subPackInfo.to_string().c_str());
 
     pos += 15;
     return subPackInfo;
@@ -169,17 +194,14 @@ void readOperation(const std::string& packet, int& pos)
     {
         // Number of bits for sub packets
         unsigned long size = parseSubNumInfo(fetchSubPackInfo(packet, pos));
-        //printf("[OP] Bits to read for sub packets %ld\n", size);
+        printf("[OP] Bits to read for sub packets %ld, from %i\n", size, pos);
+        //TODO: Figure out what is wrong here, seems like the pos param is not taken into account?
+        //parsePacket(packet, pos);
     }
 }
 
-int main(int argc, char** argv)
+unsigned int parsePacket(const std::string& packet, int& pos)
 {
-    std::ifstream file = std::ifstream(PATH);
-    int pos = 0;
-    //std::string packet = parseFile(std::move(file));
-    std::string packet = "38006F45291200";
-
     Header h = parseHeader(fetchHeader(packet, pos));
     printf("ver: %i; type: %i, next pos = %i\n", h.ver, h.type, pos);
 
@@ -192,6 +214,18 @@ int main(int argc, char** argv)
         readOperation(packet, pos);
     }
 
-    printf("\nResult = %ld\n", 0L);
+    return 0;
+}
+
+int main(int argc, char** argv)
+{
+    std::ifstream file = std::ifstream(PATH);
+    int pos = 0;
+    //std::string packet = parseFile(std::move(file));
+    std::string packet = "38006F45291200";
+
+    int result = parsePacket(packet, pos);
+
+    printf("\nResult = %i\n", result);
     return 0;
 }
