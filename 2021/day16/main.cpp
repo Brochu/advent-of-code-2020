@@ -71,12 +71,6 @@ std::bitset<5> fetchNextSegment(const std::string& raw, int& pos)
     int idx = pos % 4;
     printf("[SEGMENT] group: %i, index: %i\n", group, idx);
 
-    std::bitset<8> temp;
-    temp |= lutHex[raw[group]];
-    temp <<= 4;
-    temp |= lutHex[raw[group+1]];
-    printf("[SEGMENT] temp = %s\n", temp.to_string().c_str());
-
     int first = 4 - idx;
     int left = 5 - first;
     int shift = 4 - left;
@@ -139,6 +133,24 @@ unsigned long readLitteral(const std::string& packet, int& pos)
     return val;
 }
 
+std::bitset<15> fetchSubPackInfo(const std::string& packet, int& pos)
+{
+    std::bitset<15> subPackInfo;
+
+    int group = pos / 4;
+    int idx = pos % 4;
+    printf("[SubPackInfo] group: %i, index: %i\n", group, idx);
+
+
+
+    pos += 15;
+    return subPackInfo;
+}
+unsigned long parseSubNumInfo(std::bitset<15> bin)
+{
+    return bin.to_ulong();
+}
+
 void readOperation(const std::string& packet, int& pos)
 {
     //TODO: Update this to read operations packet
@@ -147,8 +159,18 @@ void readOperation(const std::string& packet, int& pos)
     int group = pos / 4;
     int idx = pos % 4;
     printf("[OP] group: %i, index: %i\n", group, idx);
-    bool type = (packet[group] & lutMaskInd[idx]) >> idx;
-    printf("[OP] %s\n", type ? "TOTAL LENGTH" : "SUB NUM");
+    pos += 1;
+
+    if (packet[group] & lutMaskInd[idx])
+    {
+        //TODO: Implement total length version
+    }
+    else
+    {
+        // Number of bits for sub packets
+        unsigned long size = parseSubNumInfo(fetchSubPackInfo(packet, pos));
+        //printf("[OP] Bits to read for sub packets %ld\n", size);
+    }
 }
 
 int main(int argc, char** argv)
