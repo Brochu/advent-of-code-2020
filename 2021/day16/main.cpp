@@ -1,13 +1,11 @@
-#include <bitset>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-#define PATH "./test_input.txt"
-//#define PATH "./input.txt"
-
-unsigned int parsePacket(const std::string& packet, int& pos);
+#define PATH "./input.txt"
 
 static std::unordered_map<char, short> lutHex
 {
@@ -29,23 +27,6 @@ static std::unordered_map<char, short> lutHex
     { 'F', 15 },
 };
 
-static std::unordered_map<int, int> lutMask
-{
-    { 0, 0 },
-    { 1, 1 },
-    { 2, 3 },
-    { 3, 7 },
-    { 4, 15 },
-};
-
-static std::unordered_map<int, int> lutMaskInd
-{
-    { 1, 8 },
-    { 2, 4 },
-    { 3, 2 },
-    { 4, 1 },
-};
-
 std::string parseFile(std::ifstream&& file)
 {
     std::string line;
@@ -53,179 +34,156 @@ std::string parseFile(std::ifstream&& file)
     return line;
 }
 
-std::bitset<6> fetchHeader(const std::string& raw, int& endPos)
+void debugBits(const std::vector<bool>& bits)
 {
-    std::bitset<6> header;
-
-    header |= lutHex[raw[0]];
-    header <<= 2;
-    header |= (raw[1] & (3 << 2)) >> 2;
-
-    endPos = 6;
-    return header;
+    printf("[DEBUG] ");
+    for (int i = 0; i < bits.size(); i++)
+    {
+        if ((i % 4) == 0 && i != 0)
+            printf("%s ", bits[i] ? "1" : "0");
+        else
+            printf("%s", bits[i] ? "1" : "0");
+    }
+    printf("\n");
 }
 
-std::bitset<5> fetchNextSegment(const std::string& raw, int& pos)
+std::vector<bool> parseBits(const std::string& line)
 {
-    std::bitset<5> segment;
+    std::vector<bool> result;
 
-    int group = pos / 4;
-    int idx = pos % 4;
-    printf("[SEGMENT] group: %i, index: %i\n", group, idx);
+    for (const char& c : line)
+    {
+        short value = lutHex[c];
+        //printf("[BITS] character = %c; value = %i >> ", c, value);
+        for (int i = 3; i >= 0; i--)
+        {
+            bool b = ((value >> i) % 2) != 0;
+            //printf("%s", b ? "1" : "0");
 
-    int first = 4 - idx;
-    int left = 5 - first;
-    int shift = 4 - left;
-    printf("[SEGMENT] first: %i, left: %i\n", first, left);
+            result.push_back(b);
+        }
+        //printf("\n");
+    }
 
-    segment |= (lutHex[raw[group]]) & lutMask[first];
-    segment <<= left;
-    segment |= (lutHex[raw[group+1]]) >> shift;
+    debugBits(result);
+    return result;
+}
 
-    pos += 5;
-    return segment;
+unsigned long getValue(std::vector<bool>&& bits)
+{
+    unsigned long value = 0;
+
+    for (const bool& b : bits)
+    {
+        value <<= 1;
+        value += b ? 1 : 0;
+    }
+    return value;
 }
 
 struct Header
 {
-    short ver;
-    short type;
+    short version = 0;
+    short type = 0;
 };
-Header parseHeader(std::bitset<6> bin)
+Header fetchHeader(std::vector<bool>&& headerBits)
 {
-    Header h;
+    auto start = headerBits.begin();
+    auto end = headerBits.begin();
 
-    h.ver = (bin >> 3).to_ulong();
-    bin &= 7;
-    h.type = bin.to_ulong();
+    std::advance(end, 3);
+    short ver = (short)getValue(std::vector<bool>(start, end));
 
-    return h;
+    start = end;
+    std::advance(end, 3);
+    short type = (short)getValue(std::vector<bool>(start, end));
+
+    return { ver, type };
 }
 
-struct Segment
+struct LiteralPart
 {
-    bool isEnd;
-    unsigned long value;
+    bool isEnd = false;
+    unsigned long value = 0;
 };
-Segment parseSegment(std::bitset<5> bin)
+LiteralPart fetchNextPart(std::vector<bool>&& literalBits)
 {
-    Segment s;
+    debugBits(literalBits);
 
-    s.isEnd = !bin.test(4);
-    bin.set(4, 0);
-    s.value = bin.to_ulong();
+    auto start = literalBits.begin();
+    std::advance(start, 1);
+    auto end = literalBits.begin();
+    std::advance(end, 5);
 
-    return s;
+    return { !literalBits[0], getValue(std::vector<bool>(start, end)) };
 }
 
-unsigned long readLitteral(const std::string& packet, int& pos)
+void parsePacket(std::vector<bool> packet)
 {
-    unsigned long val = 0;
-    Segment s{};
+    // Get Header
+    auto start = packet.begin();
+    auto end = packet.begin();
+    std::advance(end, 6);
+    Header h = fetchHeader(std::vector<bool>(start, end));
+    printf("[PACKET] Header: version = %i; type = %i\n", h.version, h.type);
 
-    while (!s.isEnd)
+    //TODO: Update iterators based on the type we need to parse next
+    if (h.type == 4)
     {
-        s = parseSegment(fetchNextSegment(packet, pos));
-        val <<= 4;
-        val |= s.value;
-    }
+        LiteralPart part;
+        unsigned long finalVal = 0;
+        while (!part.isEnd)
+        {
+            start = end;
+            std::advance(end, 5);
+            part = fetchNextPart(std::vector<bool>(start, end));
+            printf("[PACKET] Part: isEnd = %s; value = %ld\n", part.isEnd ? "TRUE" : "FALSE", part.value);
 
-    printf("Total = %ld\n", val);
+            finalVal <<= 4;
+            finalVal |= part.value;
+        }
 
-    return val;
-}
-
-std::bitset<15> fetchSubPackInfo(const std::string& packet, int& pos)
-{
-    std::bitset<15> subPackInfo;
-
-    int group = pos / 4;
-    int idx = pos % 4;
-    int left = 15;
-    printf("[SubPackInfo] group: %i, index: %i\n", group, idx);
-
-    // First part
-    left -= (4 - idx);
-    subPackInfo |= lutHex[packet[group]] & lutMask[4 - idx];
-
-    while (left > 4)
-    {
-        group++;
-
-        subPackInfo <<= 4;
-        subPackInfo |= lutHex[packet[group]];
-
-        left -= 4;
-    }
-
-    if (left > 0)
-    {
-        group++;
-
-        subPackInfo <<= left;
-        subPackInfo |= (lutHex[packet[group]] >> (4 - left));
-    }
-
-    printf("[SubPackInfo]%s\n", subPackInfo.to_string().c_str());
-
-    pos += 15;
-    return subPackInfo;
-}
-unsigned long parseSubNumInfo(std::bitset<15> bin)
-{
-    return bin.to_ulong();
-}
-
-void readOperation(const std::string& packet, int& pos)
-{
-    //TODO: Update this to read operations packet
-    printf("[OP] reading...");
-
-    int group = pos / 4;
-    int idx = pos % 4;
-    printf("[OP] group: %i, index: %i\n", group, idx);
-    pos += 1;
-
-    if (packet[group] & lutMaskInd[idx])
-    {
-        //TODO: Implement total length version
+        printf("[PACKET] Final literal = %ld\n", finalVal);
     }
     else
     {
-        // Number of bits for sub packets
-        unsigned long size = parseSubNumInfo(fetchSubPackInfo(packet, pos));
-        printf("[OP] Bits to read for sub packets %ld, from %i\n", size, pos);
-        //TODO: Figure out what is wrong here, seems like the pos param is not taken into account?
-        //parsePacket(packet, pos);
-    }
-}
+        start = end;
+        bool parseType = *start;
 
-unsigned int parsePacket(const std::string& packet, int& pos)
-{
-    Header h = parseHeader(fetchHeader(packet, pos));
-    printf("ver: %i; type: %i, next pos = %i\n", h.ver, h.type, pos);
+        std::advance(start, 1);
+        end = start;
 
-    if (h.type == 4) // Litteral
-    {
-        unsigned long value = readLitteral(packet, pos);
+        if (parseType)
+        {
+            std::advance(end, 11);
+            unsigned long count = getValue(std::vector<bool>(start, end));
+            printf("[PACKET] Sub Packets Count = %ld\n", count);
+        }
+        else
+        {
+            std::advance(end, 15);
+            unsigned long length = getValue(std::vector<bool>(start, end));
+            printf("[PACKET] Bit Length = %ld\n", length);
+        }
     }
-    else
-    {
-        readOperation(packet, pos);
-    }
-
-    return 0;
 }
 
 int main(int argc, char** argv)
 {
+    // Get the string in the file, or hardcode one for debug
+    /*
     std::ifstream file = std::ifstream(PATH);
-    int pos = 0;
-    //std::string packet = parseFile(std::move(file));
-    std::string packet = "38006F45291200";
+    std::string line;
+    getline(file, line);
+    */
 
-    int result = parsePacket(packet, pos);
+    //std::string line = "D2FE28";
+    //std::string line = "38006F45291200";
+    std::string line = "EE00D40C823060";
 
-    printf("\nResult = %i\n", result);
+    std::vector<bool> bits = parseBits(line);
+    parsePacket(std::vector<bool>(bits.begin(), bits.end()));
+
+    printf("\nResult = %ld\n", 0L);
     return 0;
 }
