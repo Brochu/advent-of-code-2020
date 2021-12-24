@@ -118,7 +118,7 @@ LiteralPart fetchNextPart(std::vector<bool>&& literalBits)
     return { !literalBits[0], getValue(std::vector<bool>(start, end)) };
 }
 
-void parsePacket(std::vector<bool> packet)
+unsigned long parsePacket(std::vector<bool> packet)
 {
     // Get Header
     auto start = packet.begin();
@@ -127,7 +127,6 @@ void parsePacket(std::vector<bool> packet)
     Header h = fetchHeader(std::vector<bool>(start, end));
     printf("[PACKET] Header: version = %i; type = %i\n", h.version, h.type);
 
-    //TODO: Update iterators based on the type we need to parse next
     if (h.type == 4)
     {
         LiteralPart part;
@@ -158,14 +157,36 @@ void parsePacket(std::vector<bool> packet)
             std::advance(end, 11);
             unsigned long count = getValue(std::vector<bool>(start, end));
             printf("[PACKET] Sub Packets Count = %ld\n", count);
+
+            start = end;
+            end = packet.end();
+            for (int i = 0; i < count; i++)
+            {
+                auto endIdx = parsePacket(std::vector<bool>(start, end));
+                std::advance(start, endIdx);
+            }
         }
         else
         {
             std::advance(end, 15);
             unsigned long length = getValue(std::vector<bool>(start, end));
             printf("[PACKET] Bit Length = %ld\n", length);
+
+            unsigned long total = 0;
+
+            start = end;
+            end = packet.end();
+            while (length > total)
+            {
+                auto endIdx = parsePacket(std::vector<bool>(start, end));
+                std::advance(start, endIdx);
+
+                total += endIdx;
+            }
         }
     }
+
+    return end - packet.begin();
 }
 
 int main(int argc, char** argv)
@@ -178,11 +199,11 @@ int main(int argc, char** argv)
     */
 
     //std::string line = "D2FE28";
-    //std::string line = "38006F45291200";
-    std::string line = "EE00D40C823060";
+    std::string line = "38006F45291200";
+    //std::string line = "EE00D40C823060";
 
     std::vector<bool> bits = parseBits(line);
-    parsePacket(std::vector<bool>(bits.begin(), bits.end()));
+    auto endPos = parsePacket(std::vector<bool>(bits.begin(), bits.end()));
 
     printf("\nResult = %ld\n", 0L);
     return 0;
