@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -34,10 +36,10 @@ std::string parseFile(std::ifstream&& file)
     return line;
 }
 
-void debugBits(const std::vector<bool>& bits)
+void debugBits(const std::vector<bool>& bits, int start, int length)
 {
     printf("[DEBUG] ");
-    for (int i = 0; i < bits.size(); i++)
+    for (int i = start; i < (start + length); i++)
     {
         if ((i % 4) == 0 && i != 0)
             printf("%s ", bits[i] ? "1" : "0");
@@ -65,18 +67,17 @@ std::vector<bool> parseBits(const std::string& line)
         //printf("\n");
     }
 
-    debugBits(result);
+    //debugBits(result);
     return result;
 }
 
-unsigned long getValue(std::vector<bool>&& bits)
+unsigned long getValue(const std::vector<bool>& bits, int& start, int length)
 {
     unsigned long value = 0;
-
-    for (const bool& b : bits)
+    for (int i = 0; i < length; i++)
     {
         value <<= 1;
-        value += b ? 1 : 0;
+        value += bits[start++];
     }
     return value;
 }
@@ -86,17 +87,21 @@ struct Header
     short version = 0;
     short type = 0;
 };
-Header fetchHeader(std::vector<bool>&& headerBits)
+Header fetchHeader(const std::vector<bool>& bits, int& start)
 {
-    auto start = headerBits.begin();
-    auto end = headerBits.begin();
+    short ver = 0;
+    for (int i = 0; i < 3; i++)
+    {
+        ver <<= 1;
+        ver += bits[start++];
+    }
 
-    std::advance(end, 3);
-    short ver = (short)getValue(std::vector<bool>(start, end));
-
-    start = end;
-    std::advance(end, 3);
-    short type = (short)getValue(std::vector<bool>(start, end));
+    short type = 0;
+    for (int i = 0; i < 3; i++)
+    {
+        type <<= 1;
+        type += bits[start++];
+    }
 
     return { ver, type };
 }
@@ -106,26 +111,20 @@ struct LiteralPart
     bool isEnd = false;
     unsigned long value = 0;
 };
-LiteralPart fetchNextPart(std::vector<bool>&& literalBits)
+LiteralPart fetchNextPart(const std::vector<bool>& bits, int& start)
 {
-    debugBits(literalBits);
+    bool isEnd = bits[start++];
+    unsigned long value = getValue(bits, start, 4);
 
-    auto start = literalBits.begin();
-    std::advance(start, 1);
-    auto end = literalBits.begin();
-    std::advance(end, 5);
-
-    return { !literalBits[0], getValue(std::vector<bool>(start, end)) };
+    return { !isEnd, value };
 }
 
-unsigned long parsePacket(std::vector<bool> packet)
+unsigned long parsePacket(const std::vector<bool>& packet, int& start, unsigned long& totalVersions)
 {
     // Get Header
-    auto start = packet.begin();
-    auto end = packet.begin();
-    std::advance(end, 6);
-    Header h = fetchHeader(std::vector<bool>(start, end));
+    Header h = fetchHeader(packet, start);
     printf("[PACKET] Header: version = %i; type = %i\n", h.version, h.type);
+    totalVersions += h.version;
 
     if (h.type == 4)
     {
@@ -133,9 +132,7 @@ unsigned long parsePacket(std::vector<bool> packet)
         unsigned long finalVal = 0;
         while (!part.isEnd)
         {
-            start = end;
-            std::advance(end, 5);
-            part = fetchNextPart(std::vector<bool>(start, end));
+            part = fetchNextPart(packet, start);
             printf("[PACKET] Part: isEnd = %s; value = %ld\n", part.isEnd ? "TRUE" : "FALSE", part.value);
 
             finalVal <<= 4;
@@ -143,50 +140,66 @@ unsigned long parsePacket(std::vector<bool> packet)
         }
 
         printf("[PACKET] Final literal = %ld\n", finalVal);
+        return finalVal;
     }
     else
     {
-        start = end;
-        bool parseType = *start;
-
-        std::advance(start, 1);
-        end = start;
+        bool parseType = packet[start++];
+        std::vector<unsigned long> results;
 
         if (parseType)
         {
-            std::advance(end, 11);
-            unsigned long count = getValue(std::vector<bool>(start, end));
+            unsigned long count = getValue(packet, start, 11);
             printf("[PACKET] Sub Packets Count = %ld\n", count);
 
-            start = end;
-            end = packet.end();
             for (int i = 0; i < count; i++)
             {
-                auto endIdx = parsePacket(std::vector<bool>(start, end));
-                std::advance(start, endIdx);
+                results.push_back(parsePacket(packet, start, totalVersions));
             }
         }
         else
         {
-            std::advance(end, 15);
-            unsigned long length = getValue(std::vector<bool>(start, end));
+            unsigned long length = getValue(packet, start, 15);
             printf("[PACKET] Bit Length = %ld\n", length);
 
-            unsigned long total = 0;
-
-            start = end;
-            end = packet.end();
-            while (length > total)
+            unsigned long target = start + length;
+            while (start < target)
             {
-                auto endIdx = parsePacket(std::vector<bool>(start, end));
-                std::advance(start, endIdx);
-
-                total += endIdx;
+                results.push_back(parsePacket(packet, start, totalVersions));
             }
+        }
+
+        switch (h.type)
+        {
+        case 0:
+            // SUM
+            return
+        case 1:
+            // PRODUCT
+            return 0;
+        case 2:
+            // MIN
+            return 0;
+        case 3:
+            // MAX
+            return 0;
+        case 5:
+            // GREATER THAN
+            return 0;
+        case 6:
+            // LESS THAN
+            return 0;
+        case 7:
+            // EQUAL TO (always 2 sub packs)
+            return 0;
+        default:
+            // What??!
+            return -1;
         }
     }
 
-    return end - packet.begin();
+    // This should not happen...
+    return -1;
 }
 
 int main(int argc, char** argv)
@@ -198,13 +211,13 @@ int main(int argc, char** argv)
     getline(file, line);
     */
 
-    //std::string line = "D2FE28";
-    std::string line = "38006F45291200";
-    //std::string line = "EE00D40C823060";
+    std::string line = "C200B40A82";
 
-    std::vector<bool> bits = parseBits(line);
-    auto endPos = parsePacket(std::vector<bool>(bits.begin(), bits.end()));
+    const std::vector<bool> bits = parseBits(line);
+    int start = 0;
+    unsigned long totalVersions = 0;
+    parsePacket(bits, start, totalVersions);
 
-    printf("\nResult = %ld\n", 0L);
+    printf("\nResult = %ld\n", totalVersions);
     return 0;
 }
