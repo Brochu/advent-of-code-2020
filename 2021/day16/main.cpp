@@ -1,11 +1,14 @@
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <numeric>
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+typedef unsigned long ulong;
 
 #define PATH "./input.txt"
 
@@ -36,10 +39,10 @@ std::string parseFile(std::ifstream&& file)
     return line;
 }
 
-void debugBits(const std::vector<bool>& bits, int start, int length)
+void debugBits(const std::vector<bool>& bits, ulong start, ulong length)
 {
     printf("[DEBUG] ");
-    for (int i = start; i < (start + length); i++)
+    for (ulong i = start; i < (start + length); i++)
     {
         if ((i % 4) == 0 && i != 0)
             printf("%s ", bits[i] ? "1" : "0");
@@ -71,10 +74,10 @@ std::vector<bool> parseBits(const std::string& line)
     return result;
 }
 
-unsigned long getValue(const std::vector<bool>& bits, int& start, int length)
+ulong getValue(const std::vector<bool>& bits, ulong& start, ulong length)
 {
-    unsigned long value = 0;
-    for (int i = 0; i < length; i++)
+    ulong value = 0;
+    for (ulong i = 0; i < length; i++)
     {
         value <<= 1;
         value += bits[start++];
@@ -87,7 +90,7 @@ struct Header
     short version = 0;
     short type = 0;
 };
-Header fetchHeader(const std::vector<bool>& bits, int& start)
+Header fetchHeader(const std::vector<bool>& bits, ulong& start)
 {
     short ver = 0;
     for (int i = 0; i < 3; i++)
@@ -109,31 +112,31 @@ Header fetchHeader(const std::vector<bool>& bits, int& start)
 struct LiteralPart
 {
     bool isEnd = false;
-    unsigned long value = 0;
+    ulong value = 0;
 };
-LiteralPart fetchNextPart(const std::vector<bool>& bits, int& start)
+LiteralPart fetchNextPart(const std::vector<bool>& bits, ulong& start)
 {
     bool isEnd = bits[start++];
-    unsigned long value = getValue(bits, start, 4);
+    ulong value = getValue(bits, start, 4);
 
     return { !isEnd, value };
 }
 
-unsigned long parsePacket(const std::vector<bool>& packet, int& start, unsigned long& totalVersions)
+ulong parsePacket(const std::vector<bool>& packet, ulong& start, ulong& totalVersions)
 {
     // Get Header
     Header h = fetchHeader(packet, start);
-    printf("[PACKET] Header: version = %i; type = %i\n", h.version, h.type);
+    //printf("[PACKET] Header: version = %i; type = %i\n", h.version, h.type);
     totalVersions += h.version;
 
     if (h.type == 4)
     {
         LiteralPart part;
-        unsigned long finalVal = 0;
+        ulong finalVal = 0;
         while (!part.isEnd)
         {
             part = fetchNextPart(packet, start);
-            printf("[PACKET] Part: isEnd = %s; value = %ld\n", part.isEnd ? "TRUE" : "FALSE", part.value);
+            //printf("[PACKET] Part: isEnd = %s; value = %ld\n", part.isEnd ? "TRUE" : "FALSE", part.value);
 
             finalVal <<= 4;
             finalVal |= part.value;
@@ -145,57 +148,80 @@ unsigned long parsePacket(const std::vector<bool>& packet, int& start, unsigned 
     else
     {
         bool parseType = packet[start++];
-        std::vector<unsigned long> results;
+        std::vector<ulong> results;
 
         if (parseType)
         {
-            unsigned long count = getValue(packet, start, 11);
-            printf("[PACKET] Sub Packets Count = %ld\n", count);
+            ulong count = getValue(packet, start, 11);
+            //printf("[PACKET] Sub Packets Count = %ld\n", count);
 
-            for (int i = 0; i < count; i++)
+            for (ulong i = 0; i < count; i++)
             {
                 results.push_back(parsePacket(packet, start, totalVersions));
             }
         }
         else
         {
-            unsigned long length = getValue(packet, start, 15);
-            printf("[PACKET] Bit Length = %ld\n", length);
+            ulong length = getValue(packet, start, 15);
+            //printf("[PACKET] Bit Length = %ld\n", length);
 
-            unsigned long target = start + length;
+            ulong target = start + length;
             while (start < target)
             {
                 results.push_back(parsePacket(packet, start, totalVersions));
             }
         }
 
+        printf("[OP] : \n");
+        for (const ulong& v : results)
+        {
+            printf("%ld; ", v);
+        }
+        printf("\n");
+
+        ulong final = -2;
         switch (h.type)
         {
         case 0:
-            // SUM
-            return
+            printf("SUM");
+            final = 0;
+            for (const ulong& l : results)
+            {
+                final += l;
+            }
+            break;
         case 1:
-            // PRODUCT
-            return 0;
+            printf("PROD");
+            final = 1;
+            for (const ulong& l : results)
+            {
+                final *= l;
+            }
+            break;
         case 2:
-            // MIN
-            return 0;
+            printf("MIN");
+            final = *std::min_element(results.cbegin(), results.cend());
+            break;
         case 3:
-            // MAX
-            return 0;
+            printf("MAX");
+            final = *std::max_element(results.cbegin(), results.cend());
+            break;
         case 5:
-            // GREATER THAN
-            return 0;
+            printf("GREATER THAN");
+            final = results[0] > results[1] ? 1 : 0;
+            break;
         case 6:
-            // LESS THAN
-            return 0;
+            printf("LESSER THAN");
+            final = results[0] < results[1] ? 1 : 0;
+            break;
         case 7:
-            // EQUAL TO (always 2 sub packs)
-            return 0;
-        default:
-            // What??!
-            return -1;
+            printf("EQUAL");
+            final = results[0] == results[1] ? 1 : 0;
+            break;
         }
+
+        printf(" : %ld\n", final);
+        return final;
     }
 
     // This should not happen...
@@ -205,19 +231,19 @@ unsigned long parsePacket(const std::vector<bool>& packet, int& start, unsigned 
 int main(int argc, char** argv)
 {
     // Get the string in the file, or hardcode one for debug
-    /*
     std::ifstream file = std::ifstream(PATH);
     std::string line;
     getline(file, line);
-    */
 
-    std::string line = "C200B40A82";
+    //std::string line = "880086C3E88112";
 
     const std::vector<bool> bits = parseBits(line);
-    int start = 0;
-    unsigned long totalVersions = 0;
-    parsePacket(bits, start, totalVersions);
+    ulong start = 0;
+    ulong totalVersions = 0;
+    ulong result = parsePacket(bits, start, totalVersions);
 
-    printf("\nResult = %ld\n", totalVersions);
+    printf("\nResult(part 1) = %ld\n", totalVersions);
+    printf("\nResult(part 2) = %ld\n", result);
+
     return 0;
 }
