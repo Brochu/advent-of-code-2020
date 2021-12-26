@@ -47,31 +47,67 @@ struct Target
         else if (x < xrange.first) return -1;
         else return 1;
     }
+
+    bool intersect(const Point& p)
+    {
+        long xRes = xcmp(p.first);
+        long yRes = ycmp(p.second);
+
+        return xRes == 0 && yRes == 0;
+    }
 };
+
+void step(Point& pos, Point& vel)
+{
+    pos.first += vel.first;
+    pos.second += vel.second;
+
+    if (vel.first > 0) vel.first--;
+    if (vel.first < 0) vel.first++;
+    vel.second--;
+}
 
 int main(int argc, char** argv)
 {
     Target target(std::ifstream(PATH));
     target.print();
 
-    //for (int i = 10; i > -20; i--)
+    // PART 1
+    //long yvel = 67;
+    //long ypos = 0;
+    //while (target.ycmp(ypos) >= 0)
     //{
-    //    printf("[%i] cmp = %ld\n", i, target.ycmp(i));
+    //    printf("[Y] pos = %ld; vel = %ld; cmp = %ld\n", ypos, yvel, target.ycmp(ypos));
+
+    //    ypos += yvel;
+    //    yvel--;
     //}
-    //for (int i = 0; i < 35; i++)
-    //{
-    //    printf("[%i] cmp = %ld\n", i, target.xcmp(i));
-    //}
-    long yvel = 67;
-    long ypos = 0;
-    while (target.ycmp(ypos) >= 0)
+    //printf("[Y] pos = %ld; vel = %ld; cmp = %ld\n", ypos, yvel, target.ycmp(ypos));
+
+    // PART 2
+    unsigned long count = 0;
+    for (int x = 0; x < 500; x++)
     {
-        printf("[Y] pos = %ld; vel = %ld; cmp = %ld\n", ypos, yvel, target.ycmp(ypos));
+        for (int y = -500; y < 500; y++)
+        {
+            if (x == 0 && y == 0) continue;
 
-        ypos += yvel;
-        yvel--;
+            Point vel = std::make_pair(x, y);
+            Point pos = std::make_pair(0, 0);
+
+            for (int k = 0; k < 1000; k++)
+            {
+                step(pos, vel);
+
+                if (target.intersect(pos))
+                {
+                    count++;
+                    break;
+                }
+            }
+        }
     }
-        printf("[Y] pos = %ld; vel = %ld; cmp = %ld\n", ypos, yvel, target.ycmp(ypos));
 
+    printf("\nResult = %ld\n", count);
     return 0;
 }
