@@ -2,14 +2,16 @@
 #include <string>
 #include <vector>
 
-#define PATH "./input.txt"
-//#define PATH "./test_input.txt"
+//#define PATH "./input.txt"
+#define PATH "./test_input.txt"
 
 struct Num
 {
     bool isPair = false;
 
     // Pair Type
+    Num* p;
+
     Num* l;
     Num* r;
 
@@ -17,15 +19,15 @@ struct Num
     long val;
 
     Num(Num* left, Num* right)
-        : isPair(true), l(left), r(right)
+        : isPair(true), p(nullptr), l(left), r(right)
     { }
 
     Num(long value)
-        : isPair(false), val(value)
+        : isPair(false), p(nullptr), val(value)
     { }
 
     Num()
-        : isPair(true), l(nullptr), r(nullptr)
+        : isPair(true), p(nullptr), l(nullptr), r(nullptr)
     { }
 
     ~Num()
@@ -93,22 +95,119 @@ Num* buildFromLine(const std::string& line)
     Num* left = buildFromLine(lstr);
     Num* right = buildFromLine(rstr);
 
-    return new Num(left, right);
+    Num* n = new Num(left, right);
+    left->p = n;
+    right->p = n;
+
+    return n;
+}
+
+Num* add(Num* first, Num* second)
+{
+    return new Num(first, second);
 }
 
 Num* buildFromFile(std::ifstream&& file)
 {
     std::string line;
     getline(file, line);
+    Num* num = buildFromLine(line);
 
-    //printf("%s\n", line.c_str());
-    return buildFromLine(line);
+    while(getline(file, line))
+    {
+        Num* second = buildFromLine(line);
+        num = add(num, second);
+    }
+
+    return num;
+}
+
+void explode(Num* n)
+{
+    n->debug();
+    printf("\n");
+
+    n->isPair = false;
+    n->val = 0;
+
+    long left = n->l->val;
+    n->l = nullptr;
+    long right = n->r->val;
+    n->r = nullptr;
+
+    // Find the left sibling to add the left value
+    Num* temp = n->p;
+    Num* prev = n;
+    while (temp->l == prev)
+    {
+        prev = temp;
+        temp = temp->p;
+    }
+    temp = temp->l;
+    while (temp->isPair)
+    {
+        temp = temp->r;
+    }
+
+    temp->debug();
+    printf("\n");
+
+    // Find the right sibling to add the right value
+}
+
+void split(Num* n)
+{
+    //TODO: Split logic, if value > 10, we need to split
+}
+
+void reduce(Num* n, int depth)
+{
+    printf("[REDUCE] depth = %i; current = ", depth);
+    n->debug();
+    if (depth >= 4 && n->isPair)
+    {
+        printf(" (EXPLODE)");
+    }
+    printf("\n");
+
+    if (n->isPair)
+    {
+        if (depth >= 4)
+        {
+            explode(n);
+        }
+        else
+        {
+            reduce(n->l, depth+1);
+            reduce(n->r, depth+1);
+        }
+    }
 }
 
 int main(int argc, char** argv)
 {
     Num* n = buildFromFile(std::ifstream(PATH));
-    n->debug();
+
+    // Parent pointer tests
+    //Num* current = n;
+    //while (current->isPair)
+    //{
+    //    current = current->r;
+    //}
+    //current->debug();
+    //printf("\n");
+
+    //while(current->p != nullptr)
+    //{
+    //    current = current->p;
+    //}
+    //current->debug();
+    //printf("\n");
+
+    // Start reducing the number
+    reduce(n, 0);
+    //n->debug();
+    //printf("\n");
 
     return 0;
 }
