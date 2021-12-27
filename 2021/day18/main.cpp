@@ -101,7 +101,7 @@ Num* buildFromFile(std::ifstream&& file)
     std::string line;
     getline(file, line);
 
-    printf("%s\n", line.c_str());
+    //printf("%s\n", line.c_str());
     return buildFromLine(line);
 }
 
