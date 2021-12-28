@@ -122,7 +122,8 @@ Num* buildFromFile(std::ifstream&& file)
     return num;
 }
 
-void explode(Num* n)
+void split(Num* n, int depth);
+void explode(Num* n, int depth = 0)
 {
     n->isPair = false;
     n->val = 0;
@@ -135,37 +136,63 @@ void explode(Num* n)
     // Find the left sibling to add the left value
     Num* temp = n->p;
     Num* prev = n;
-    while (temp->l == prev)
+    while (temp != nullptr && temp->l == prev)
     {
         prev = temp;
         temp = temp->p;
     }
-    temp = temp->l;
-    while (temp->isPair)
+    if (temp != nullptr)
     {
-        temp = temp->r;
+        temp = temp->l;
+        while (temp->isPair)
+        {
+            temp = temp->r;
+        }
+        temp->val += left;
+        //if (temp->val >= 10) split(temp, depth);
     }
-    temp->val += left;
 
     // Find the right sibling to add the right value
     temp = n->p;
     prev = n;
-    while (temp->r == prev)
+    while (temp != nullptr && temp->r == prev)
     {
         prev = temp;
         temp = temp->p;
     }
-    temp = temp->r;
-    while (temp->isPair)
+    if (temp != nullptr)
     {
-        temp = temp->l;
+        temp = temp->r;
+        while (temp->isPair)
+        {
+            temp = temp->l;
+        }
+        temp->val += right;
+        //if (temp->val >= 10) split(temp, depth);
     }
-    temp->val += right;
 }
 
-void split(Num* n)
+void split(Num* n, int depth = 0)
 {
-    //TODO: Split logic, if value > 10, we need to split
+    long lval = (n->val) / 2;
+    long rval = (n->val + 1) / 2;
+
+    printf("[SPLIT] l: %ld; r: %ld\n", lval, rval);
+    Num* left = new Num(lval);
+    left->p = n;
+    Num* right = new Num(rval);
+    right->p = n;
+
+    n->isPair = true;
+    n->val = -1;
+    n->l = left;
+    n->r = right;
+
+    if (depth >= 4)
+    {
+        //TODO: Debug why we are not exploding after split?
+        explode(n, depth);
+    }
 }
 
 void reduce(Num* n, int depth)
@@ -176,13 +203,17 @@ void reduce(Num* n, int depth)
     {
         printf(" (EXPLODE)");
     }
+    else if (!n->isPair && n->val >= 10)
+    {
+        printf(" (SPLIT)");
+    }
     printf("\n");
 
     if (n->isPair)
     {
         if (depth >= 4)
         {
-            explode(n);
+            explode(n, depth);
         }
         else
         {
@@ -190,11 +221,17 @@ void reduce(Num* n, int depth)
             reduce(n->r, depth+1);
         }
     }
+    else if (n->val >= 10)
+    {
+        split(n);
+    }
 }
 
 int main(int argc, char** argv)
 {
     Num* n = buildFromFile(std::ifstream(PATH));
+    n->debug();
+    printf("\n");
 
     // Parent pointer tests
     //Num* current = n;
@@ -216,6 +253,15 @@ int main(int argc, char** argv)
     reduce(n, 0);
     n->debug();
     printf("\n");
+
+    //printf("--------------------\n");
+    //Num* splitTest = new Num(15);
+    //splitTest->debug();
+    //printf("\n");
+
+    //split(splitTest);
+    //splitTest->debug();
+    //printf("\n");
 
     return 0;
 }
