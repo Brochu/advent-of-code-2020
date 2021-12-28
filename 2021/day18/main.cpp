@@ -190,7 +190,6 @@ void split(Num* n, int depth = 0)
 
     if (depth >= 4)
     {
-        //TODO: Debug why we are not exploding after split?
         explode(n, depth);
     }
 }
