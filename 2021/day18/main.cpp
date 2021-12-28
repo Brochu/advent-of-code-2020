@@ -124,9 +124,6 @@ Num* buildFromFile(std::ifstream&& file)
 
 void explode(Num* n)
 {
-    n->debug();
-    printf("\n");
-
     n->isPair = false;
     n->val = 0;
 
@@ -148,11 +145,22 @@ void explode(Num* n)
     {
         temp = temp->r;
     }
-
-    temp->debug();
-    printf("\n");
+    temp->val += left;
 
     // Find the right sibling to add the right value
+    temp = n->p;
+    prev = n;
+    while (temp->r == prev)
+    {
+        prev = temp;
+        temp = temp->p;
+    }
+    temp = temp->r;
+    while (temp->isPair)
+    {
+        temp = temp->l;
+    }
+    temp->val += right;
 }
 
 void split(Num* n)
@@ -206,8 +214,8 @@ int main(int argc, char** argv)
 
     // Start reducing the number
     reduce(n, 0);
-    //n->debug();
-    //printf("\n");
+    n->debug();
+    printf("\n");
 
     return 0;
 }
