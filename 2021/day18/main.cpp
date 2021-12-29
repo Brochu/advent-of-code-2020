@@ -104,7 +104,11 @@ Num* buildFromLine(const std::string& line)
 
 Num* add(Num* first, Num* second)
 {
-    return new Num(first, second);
+    Num* n = new Num(first, second);
+    first->p = n;
+    second->p = n;
+
+    return n;
 }
 
 Num* buildFromFile(std::ifstream&& file)
@@ -133,6 +137,8 @@ void explode(Num* n, int depth = 0)
     long right = n->r->val;
     n->r = nullptr;
 
+    printf("[EXPLODE] l: %ld; r: %ld\n", left, right);
+
     // Find the left sibling to add the left value
     Num* temp = n->p;
     Num* prev = n;
@@ -149,7 +155,7 @@ void explode(Num* n, int depth = 0)
             temp = temp->r;
         }
         temp->val += left;
-        //if (temp->val >= 10) split(temp, depth);
+        if (temp->val >= 10) split(temp, depth-1);
     }
 
     // Find the right sibling to add the right value
@@ -168,7 +174,6 @@ void explode(Num* n, int depth = 0)
             temp = temp->l;
         }
         temp->val += right;
-        //if (temp->val >= 10) split(temp, depth);
     }
 }
 
@@ -190,7 +195,7 @@ void split(Num* n, int depth = 0)
 
     if (depth >= 4)
     {
-        explode(n, depth);
+        explode(n, depth-1);
     }
 }
 
@@ -222,7 +227,7 @@ void reduce(Num* n, int depth)
     }
     else if (n->val >= 10)
     {
-        split(n);
+        split(n, depth);
     }
 }
 
