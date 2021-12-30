@@ -2,8 +2,8 @@
 #include <string>
 #include <vector>
 
-//#define PATH "./input.txt"
-#define PATH "./test_input.txt"
+#define PATH "./input.txt"
+//#define PATH "./test_input.txt"
 
 struct Num
 {
@@ -106,27 +106,46 @@ Num* add(Num* first, Num* second)
     return n;
 }
 
-bool shouldExplode(Num* n, int depth)
+Num* findExplode(Num* n, int depth)
 {
     if (n->isPair)
     {
-        const bool validPair = !n->l->isPair && !n->r->isPair;
-        return validPair && depth >= 4;
+        Num* left = findExplode(n->l, depth+1);
+        if (left != nullptr) return left;
+
+        printf("[EXPLODE SEARCH] (depth = %i) ", depth);
+        n->debug();
+        printf("\n");
+
+        if (depth >= 4 && !n->l->isPair && !n->r->isPair)
+        {
+            return n;
+        }
+
+        Num* right = findExplode(n->r, depth+1);
+        if (right != nullptr) return right;
     }
 
-    return false;
+    return nullptr;
 }
-bool shouldSplit(Num* n, int depth)
+Num* findSplit(Num* n)
 {
-    return !n->isPair && n->val >= 10;
+    if (n->isPair)
+    {
+        Num* left = findSplit(n->l);
+        if (left != nullptr) return left;
+
+        Num* right = findSplit(n->r);
+        if (right != nullptr) return right;
+    }
+
+    if (!n->isPair && n->val >= 10) return n;
+
+    return nullptr;
 }
 
-// Forward declare here since we need some recursion...
-void explode(Num* n, int depth)
+void explode(Num* n)
 {
-    // Add each of values to nearest normal values (left and right)
-    // Change current n to a zero node
-
     const long left = n->l->val;
     const long right = n->r->val;
 
@@ -172,11 +191,10 @@ void explode(Num* n, int depth)
     }
 }
 
-void split(Num* n, int depth)
+void split(Num* n)
 {
     const long left = n->val / 2;
     const long right = (n->val + 1)/ 2;
-    printf("\n[SPLIT] l = %ld; r = %ld", left, right);
 
     n->val = 0;
     n->isPair = true;
@@ -187,37 +205,40 @@ void split(Num* n, int depth)
     n->r->p = n;
 }
 
-void reduce(Num* n, int depth)
+void reduce(Num* n)
 {
     //TODO: Explode and split works well
     // Just need to change how we loop through the operations
     // Implement find fonctions instead to find the next explosion and split to do
-    if (n->isPair)
+    Num* nextExplode = findExplode(n, 0);
+    if (nextExplode != nullptr)
     {
-        reduce(n->l, depth+1);
-    }
+        printf("[SHOULD EXPLODE] ");
+        nextExplode->debug();
+        printf("\n");
 
-    printf("[depth = %i] ", depth);
-    n->debug();
-    if (shouldExplode(n, depth))
-    {
-        printf(" (EXPLODE)");
-        explode(n, depth);
-        reduce(n, 0);
+        explode(nextExplode);
+        printf("[DONE EXPLODE] ");
+        n->debug();
+        printf("\n");
+
+        reduce(n);
         return;
     }
-    if (shouldSplit(n, depth))
-    {
-        printf(" (SPLIT)");
-        split(n, depth);
-        reduce(n, 0);
-        return;
-    }
-    printf("\n");
 
-    if (n->isPair)
+    Num* nextSplit = findSplit(n);
+    if (nextSplit != nullptr)
     {
-        reduce(n->r, depth+1);
+        printf("[SHOULD SPLIT]");
+        nextSplit->debug();
+        printf("\n");
+
+        split(nextSplit);
+        printf("[AFTER SPLIT]");
+        n->debug();
+        printf("\n");
+
+        reduce(n);
     }
 }
 
@@ -231,16 +252,28 @@ Num* buildFromFile(std::ifstream&& file)
     {
         Num* second = buildFromLine(line);
         num = add(num, second);
-        reduce(num, 0);
+        reduce(num);
     }
 
     return num;
+}
+
+unsigned long long calcMagnitude(Num* n)
+{
+    if (n->isPair)
+    {
+        return (3 * calcMagnitude(n->l)) + (2 * calcMagnitude(n->r));
+    }
+
+    return n->val;
 }
 
 int main(int argc, char** argv)
 {
     Num* n = buildFromFile(std::ifstream(PATH));
     n->debug();
+    printf("\n");
 
+    printf("\nResult = %lld", calcMagnitude(n));
     return 0;
 }
