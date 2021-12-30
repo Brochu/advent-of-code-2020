@@ -187,13 +187,14 @@ void split(Num* n, int depth)
     n->r->p = n;
 }
 
-long reduce(Num* n, int depth)
+void reduce(Num* n, int depth)
 {
-    long count = 0;
-    // Deal with left element
+    //TODO: Explode and split works well
+    // Just need to change how we loop through the operations
+    // Implement find fonctions instead to find the next explosion and split to do
     if (n->isPair)
     {
-        count += reduce(n->l, depth+1);
+        reduce(n->l, depth+1);
     }
 
     printf("[depth = %i] ", depth);
@@ -202,23 +203,22 @@ long reduce(Num* n, int depth)
     {
         printf(" (EXPLODE)");
         explode(n, depth);
-        count++;
+        reduce(n, 0);
+        return;
     }
-    else if (shouldSplit(n, depth))
+    if (shouldSplit(n, depth))
     {
         printf(" (SPLIT)");
         split(n, depth);
-        count++;
+        reduce(n, 0);
+        return;
     }
     printf("\n");
 
-    // Deal with right element
     if (n->isPair)
     {
-        count += reduce(n->r, depth+1);
+        reduce(n->r, depth+1);
     }
-
-    return count;
 }
 
 Num* buildFromFile(std::ifstream&& file)
@@ -231,12 +231,7 @@ Num* buildFromFile(std::ifstream&& file)
     {
         Num* second = buildFromLine(line);
         num = add(num, second);
-
-        long count = reduce(num, 0);
-        while (count != 0)
-        {
-            count = reduce(num, 0);
-        }
+        reduce(num, 0);
     }
 
     return num;
@@ -246,7 +241,6 @@ int main(int argc, char** argv)
 {
     Num* n = buildFromFile(std::ifstream(PATH));
     n->debug();
-    printf("\n");
 
     return 0;
 }
