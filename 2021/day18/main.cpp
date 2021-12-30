@@ -83,14 +83,9 @@ Num* buildFromLine(const std::string& line)
 
     const std::string inside(++line.begin(), --line.end());
 
-    //printf("[LINE] %s\n", inside.c_str());
     size_t idx = findSplit(inside);
-    //printf("[IDX] '%ld'\n", idx);
-
     std::string lstr = inside.substr(0, idx);
-    //printf("[LEFT] '%s'\n", lstr.c_str());
     std::string rstr = inside.substr(idx+1);
-    //printf("[RIGHT] '%s'\n", rstr.c_str());
 
     Num* left = buildFromLine(lstr);
     Num* right = buildFromLine(rstr);
@@ -111,7 +106,21 @@ Num* add(Num* first, Num* second)
     return n;
 }
 
-void reduce(Num* n, int depth);
+void reduce(Num* n, int depth)
+{
+    if (n->isPair)
+    {
+        reduce(n->l, depth+1);
+    }
+
+    // My own
+
+    if (n->isPair)
+    {
+        reduce(n->r, depth+1);
+    }
+}
+
 Num* buildFromFile(std::ifstream&& file)
 {
     std::string line;
@@ -126,109 +135,6 @@ Num* buildFromFile(std::ifstream&& file)
     }
 
     return num;
-}
-
-void split(Num* n, int depth);
-void explode(Num* n, int depth = 0)
-{
-    n->isPair = false;
-    n->val = 0;
-
-    long left = n->l->val;
-    n->l = nullptr;
-    long right = n->r->val;
-    n->r = nullptr;
-
-    //printf("[EXPLODE] l: %ld; r: %ld\n", left, right);
-
-    // Find the left sibling to add the left value
-    Num* temp = n->p;
-    Num* prev = n;
-    while (temp != nullptr && temp->l == prev)
-    {
-        prev = temp;
-        temp = temp->p;
-    }
-    if (temp != nullptr)
-    {
-        temp = temp->l;
-        while (temp->isPair)
-        {
-            temp = temp->r;
-        }
-        temp->val += left;
-        if (temp->val >= 10) split(temp, depth-1);
-    }
-
-    // Find the right sibling to add the right value
-    temp = n->p;
-    prev = n;
-    while (temp != nullptr && temp->r == prev)
-    {
-        prev = temp;
-        temp = temp->p;
-    }
-    if (temp != nullptr)
-    {
-        temp = temp->r;
-        while (temp->isPair)
-        {
-            temp = temp->l;
-        }
-        temp->val += right;
-        //if (temp->val >= 10) split(temp, depth-1);
-    }
-}
-
-void split(Num* n, int depth = 0)
-{
-    long lval = (n->val) / 2;
-    long rval = (n->val + 1) / 2;
-
-    //printf("[SPLIT] l: %ld; r: %ld\n", lval, rval);
-    Num* left = new Num(lval);
-    left->p = n;
-    Num* right = new Num(rval);
-    right->p = n;
-
-    n->isPair = true;
-    n->val = 0;
-    n->l = left;
-    n->r = right;
-
-    if (depth >= 4)
-    {
-        explode(n, depth-1);
-    }
-}
-
-void reduce(Num* n, int depth)
-{
-    //printf("[REDUCE] depth = %i; current = ", depth);
-    //n->debug();
-    //if (depth >= 4 && n->isPair)
-    //{
-    //    printf(" (EXPLODE)");
-    //}
-    //else if (!n->isPair && n->val >= 10)
-    //{
-    //    printf(" (SPLIT)");
-    //}
-    //printf("\n");
-
-    if (n->isPair)
-    {
-        reduce(n->l, depth+1);
-    }
-
-    // My own
-    if (n->isPair && depth >=4) explode(n, depth);
-    else if (!n->isPair && n->val >= 10) split(n, depth);
-
-    if (n->isPair)
-    {
-        reduce(n->r, depth+1);
-    }
 }
 
 int main(int argc, char** argv)
