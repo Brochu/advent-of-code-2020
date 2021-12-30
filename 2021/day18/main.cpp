@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-//#define PATH "./input.txt"
-#define PATH "./test_input.txt"
+#define PATH "./input.txt"
+//#define PATH "./test_input.txt"
 
 struct Num
 {
@@ -105,6 +105,24 @@ Num* add(Num* first, Num* second)
     second->p = n;
 
     return n;
+}
+
+void copy(Num* og, Num* c)
+{
+    if (og->isPair)
+    {
+        c->l = new Num();
+        c->l->p = c;
+        copy(og->l, c->l);
+        c->r = new Num();
+        c->r->p = c;
+        copy(og->r, c->r);
+    }
+    else
+    {
+        c->isPair = false;
+        c->val = og->val;
+    }
 }
 
 Num* findExplode(Num* n, int depth)
@@ -266,27 +284,40 @@ int main(int argc, char** argv)
     //n->debug();
     //printf("\n");
 
-    //printf("\nResult = %lld\n\n", calcMagnitude(n));
+    //Num* test = new Num();
+    //copy(n, test);
+
+    //printf("\nResult = %lld\n\n", calcMagnitude(test));
 
     std::vector<Num*> numbers = listFromFile(std::ifstream(PATH));
+    unsigned long long MaxM = 0;
     for (Num* first : numbers)
     {
         for (Num* second : numbers)
         {
-            if (first == second) continue;
-
-            first->debug();
+            Num* nf = new Num();
+            copy(first, nf);
+            Num* ns = new Num();
+            copy(second, ns);
+            nf->debug();
             printf(" + ");
-            second->debug();
+            ns->debug();
             printf("\n");
 
-            Num* sum = add(first, second);
+            Num* sum = add(nf, ns);
+            reduce(sum);
+            unsigned long long m = calcMagnitude(sum);
+            printf("[%lld]", m);
             sum->debug();
-            printf("\n");
-            //TODO: Need to find a way to reduce only a copy to reuse the numbers for next iteration
-            //reduce(sum);
+            printf("\n\n");
+
+            if (m > MaxM)
+            {
+                MaxM = m;
+            }
         }
     }
 
+    printf("\nResult = %lld\n\n", MaxM);
     return 0;
 }
