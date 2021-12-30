@@ -121,7 +121,7 @@ bool shouldSplit(Num* n, int depth)
     return !n->isPair && n->val >= 10;
 }
 
-void reduce(Num* n, int depth);
+// Forward declare here since we need some recursion...
 void explode(Num* n, int depth)
 {
     // Add each of values to nearest normal values (left and right)
@@ -152,12 +152,7 @@ void explode(Num* n, int depth)
             temp = temp->r;
         }
         temp->val += left;
-        // We won't be checking back here for split possibilities
-        // Should we restart the reduce process from here ?
-        // Or should we just call split manually
     }
-    else
-        printf("\nCould not find value to left");
 
     temp = n->p;
     prev = n;
@@ -175,21 +170,30 @@ void explode(Num* n, int depth)
         }
         temp->val += right;
     }
-    else
-        printf("\n Could not find value to right");
 }
 
 void split(Num* n, int depth)
 {
-    // Change this current n to a pair with half the full values in left and right
+    const long left = n->val / 2;
+    const long right = (n->val + 1)/ 2;
+    printf("\n[SPLIT] l = %ld; r = %ld", left, right);
+
+    n->val = 0;
+    n->isPair = true;
+
+    n->l = new Num(left);
+    n->l->p = n;
+    n->r = new Num(right);
+    n->r->p = n;
 }
 
-void reduce(Num* n, int depth)
+long reduce(Num* n, int depth)
 {
+    long count = 0;
     // Deal with left element
     if (n->isPair)
     {
-        reduce(n->l, depth+1);
+        count += reduce(n->l, depth+1);
     }
 
     printf("[depth = %i] ", depth);
@@ -198,19 +202,23 @@ void reduce(Num* n, int depth)
     {
         printf(" (EXPLODE)");
         explode(n, depth);
+        count++;
     }
     else if (shouldSplit(n, depth))
     {
         printf(" (SPLIT)");
         split(n, depth);
+        count++;
     }
     printf("\n");
 
     // Deal with right element
     if (n->isPair)
     {
-        reduce(n->r, depth+1);
+        count += reduce(n->r, depth+1);
     }
+
+    return count;
 }
 
 Num* buildFromFile(std::ifstream&& file)
@@ -223,7 +231,12 @@ Num* buildFromFile(std::ifstream&& file)
     {
         Num* second = buildFromLine(line);
         num = add(num, second);
-        reduce(num, 0);
+
+        long count = reduce(num, 0);
+        while (count != 0)
+        {
+            count = reduce(num, 0);
+        }
     }
 
     return num;
