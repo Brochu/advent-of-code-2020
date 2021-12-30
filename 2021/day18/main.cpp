@@ -106,15 +106,107 @@ Num* add(Num* first, Num* second)
     return n;
 }
 
+bool shouldExplode(Num* n, int depth)
+{
+    if (n->isPair)
+    {
+        const bool validPair = !n->l->isPair && !n->r->isPair;
+        return validPair && depth >= 4;
+    }
+
+    return false;
+}
+bool shouldSplit(Num* n, int depth)
+{
+    return !n->isPair && n->val >= 10;
+}
+
+void reduce(Num* n, int depth);
+void explode(Num* n, int depth)
+{
+    // Add each of values to nearest normal values (left and right)
+    // Change current n to a zero node
+
+    const long left = n->l->val;
+    const long right = n->r->val;
+
+    n->l = nullptr;
+    delete n->l;
+    n->r = nullptr;
+    delete n->r;
+    n->isPair = false;
+    n->val = 0;
+
+    Num* temp = n->p;
+    Num* prev = n;
+    while (temp != nullptr && temp->l == prev)
+    {
+        prev = temp;
+        temp = temp->p;
+    }
+    if (temp != nullptr)
+    {
+        temp = temp->l;
+        while (temp->isPair)
+        {
+            temp = temp->r;
+        }
+        temp->val += left;
+        // We won't be checking back here for split possibilities
+        // Should we restart the reduce process from here ?
+        // Or should we just call split manually
+    }
+    else
+        printf("\nCould not find value to left");
+
+    temp = n->p;
+    prev = n;
+    while (temp != nullptr && temp->r == prev)
+    {
+        prev = temp;
+        temp = temp->p;
+    }
+    if (temp != nullptr)
+    {
+        temp = temp->r;
+        while (temp->isPair)
+        {
+            temp = temp->l;
+        }
+        temp->val += right;
+    }
+    else
+        printf("\n Could not find value to right");
+}
+
+void split(Num* n, int depth)
+{
+    // Change this current n to a pair with half the full values in left and right
+}
+
 void reduce(Num* n, int depth)
 {
+    // Deal with left element
     if (n->isPair)
     {
         reduce(n->l, depth+1);
     }
 
-    // My own
+    printf("[depth = %i] ", depth);
+    n->debug();
+    if (shouldExplode(n, depth))
+    {
+        printf(" (EXPLODE)");
+        explode(n, depth);
+    }
+    else if (shouldSplit(n, depth))
+    {
+        printf(" (SPLIT)");
+        split(n, depth);
+    }
+    printf("\n");
 
+    // Deal with right element
     if (n->isPair)
     {
         reduce(n->r, depth+1);
