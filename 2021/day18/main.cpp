@@ -1,9 +1,10 @@
+#include <algorithm>
 #include <fstream>
 #include <string>
 #include <vector>
 
-#define PATH "./input.txt"
-//#define PATH "./test_input.txt"
+//#define PATH "./input.txt"
+#define PATH "./test_input.txt"
 
 struct Num
 {
@@ -113,10 +114,6 @@ Num* findExplode(Num* n, int depth)
         Num* left = findExplode(n->l, depth+1);
         if (left != nullptr) return left;
 
-        printf("[EXPLODE SEARCH] (depth = %i) ", depth);
-        n->debug();
-        printf("\n");
-
         if (depth >= 4 && !n->l->isPair && !n->r->isPair)
         {
             return n;
@@ -207,21 +204,10 @@ void split(Num* n)
 
 void reduce(Num* n)
 {
-    //TODO: Explode and split works well
-    // Just need to change how we loop through the operations
-    // Implement find fonctions instead to find the next explosion and split to do
     Num* nextExplode = findExplode(n, 0);
     if (nextExplode != nullptr)
     {
-        printf("[SHOULD EXPLODE] ");
-        nextExplode->debug();
-        printf("\n");
-
         explode(nextExplode);
-        printf("[DONE EXPLODE] ");
-        n->debug();
-        printf("\n");
-
         reduce(n);
         return;
     }
@@ -229,15 +215,7 @@ void reduce(Num* n)
     Num* nextSplit = findSplit(n);
     if (nextSplit != nullptr)
     {
-        printf("[SHOULD SPLIT]");
-        nextSplit->debug();
-        printf("\n");
-
         split(nextSplit);
-        printf("[AFTER SPLIT]");
-        n->debug();
-        printf("\n");
-
         reduce(n);
     }
 }
@@ -258,6 +236,20 @@ Num* buildFromFile(std::ifstream&& file)
     return num;
 }
 
+std::vector<Num*> listFromFile(std::ifstream&& file)
+{
+    std::vector<Num*> result;
+
+    std::string line;
+    while(getline(file, line))
+    {
+        Num* num = buildFromLine(line);
+        result.push_back(num);
+    }
+
+    return result;
+}
+
 unsigned long long calcMagnitude(Num* n)
 {
     if (n->isPair)
@@ -270,10 +262,31 @@ unsigned long long calcMagnitude(Num* n)
 
 int main(int argc, char** argv)
 {
-    Num* n = buildFromFile(std::ifstream(PATH));
-    n->debug();
-    printf("\n");
+    //Num* n = buildFromFile(std::ifstream(PATH));
+    //n->debug();
+    //printf("\n");
 
-    printf("\nResult = %lld", calcMagnitude(n));
+    //printf("\nResult = %lld\n\n", calcMagnitude(n));
+
+    std::vector<Num*> numbers = listFromFile(std::ifstream(PATH));
+    for (Num* first : numbers)
+    {
+        for (Num* second : numbers)
+        {
+            if (first == second) continue;
+
+            first->debug();
+            printf(" + ");
+            second->debug();
+            printf("\n");
+
+            Num* sum = add(first, second);
+            sum->debug();
+            printf("\n");
+            //TODO: Need to find a way to reduce only a copy to reuse the numbers for next iteration
+            //reduce(sum);
+        }
+    }
+
     return 0;
 }
