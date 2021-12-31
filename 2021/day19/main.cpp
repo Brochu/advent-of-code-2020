@@ -133,6 +133,31 @@ std::vector<Scanner> parseFile(std::ifstream&& file)
     return results;
 }
 
+std::vector<std::pair<int, int>> findOverlaps(const std::vector<Scanner>& scans)
+{
+    std::vector<std::pair<int, int>> overlaps;
+
+    for (int i = 0; i < scans.size(); i++)
+    {
+        for (int j = i+1; j < scans.size(); j++)
+        {
+            const DistCache& first = scans[i].sqDists;
+            const DistCache& second = scans[j].sqDists;
+
+            std::vector<ulong> common(first.size() + second.size());
+            auto it = std::set_intersection(first.begin(), first.end(), second.begin(), second.end(), common.begin());
+            common.resize(it - common.begin());
+
+            printf("{%i, %i} have %ld in common\n", i, j, common.size());
+
+            if (common.size() >= 66)
+                overlaps.push_back({i, j});
+        }
+    }
+
+    return overlaps;
+}
+
 int main(int argc, char** argv)
 {
     std::vector<Scanner> scans = parseFile(std::ifstream(PATH));
@@ -142,24 +167,15 @@ int main(int argc, char** argv)
     //    s.debug();
     //}
 
-    for (const Scanner& s : scans)
+    //for (const Scanner& s : scans)
+    //{
+    //    s.debugDist();
+    //}
+
+    std::vector<std::pair<int, int>> overlaps = findOverlaps(scans);
+    for (const auto& p : overlaps)
     {
-        s.debugDist();
-    }
-
-    for (int i = 0; i < scans.size(); i++)
-    {
-        for (int j = i+1; j < scans.size(); j++)
-        {
-            DistCache first = scans[i].sqDists;
-            DistCache second = scans[j].sqDists;
-
-            std::vector<ulong> common(first.size() + second.size());
-            auto it = std::set_intersection(first.begin(), first.end(), second.begin(), second.end(), common.begin());
-            common.resize(it - common.begin());
-
-            printf("{%i, %i} have %ld in common\n", i, j, common.size());
-        }
+        printf("[OVERLAP] (%i, %i)\n", p.first, p.second);
     }
 
     return 0;
