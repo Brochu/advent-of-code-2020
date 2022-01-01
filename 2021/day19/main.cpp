@@ -133,7 +133,7 @@ struct Overlap
     Overlap(int first, int second)
         : firstScan(first), secondScan(second)
     {
-        //TODO: Get all beacon idx for each scanners
+        printf("[OVERLAP] Finding all beacons between scan %i and %i\n", firstScan, secondScan);
     }
 };
 
@@ -177,7 +177,7 @@ std::vector<Overlap> findOverlaps(const std::vector<Scanner>& scans)
             auto it = std::set_intersection(first.begin(), first.end(), second.begin(), second.end(), common.begin());
             common.resize(it - common.begin());
 
-            printf("{%i, %i} have %ld in common\n", i, j, common.size());
+            //printf("{%i, %i} have %ld in common\n", i, j, common.size());
 
             if (common.size() >= 66)
                 overlaps.push_back(Overlap(i, j));
@@ -204,8 +204,7 @@ int main(int argc, char** argv)
     std::vector<Overlap> overlaps = findOverlaps(scans);
     for (const auto& p : overlaps)
     {
-        //TODO: Debug output to validate overlaps
-        //printf("[OVERLAP] (%i, %i)\n", p.first, p.second);
+        printf("[OVERLAP] (%i, %i)\n", p.firstScan, p.secondScan);
     }
 
     return 0;
