@@ -81,6 +81,20 @@ struct Scanner
         }
     }
 
+    int findBeacon(ulong dist) const
+    {
+        for (int i = 0; i < beacons.size(); i++)
+        {
+            for (int j = i+1; j < beacons.size(); j++)
+            {
+                if (sqDistMatrix[i][j] == dist)
+                    return i;
+            }
+        }
+
+        return {};
+    }
+
     Scanner(){}
     Scanner(std::vector<std::string> lines)
     {
@@ -105,6 +119,21 @@ struct Scanner
         // Make sure we can store the beacons distances in the matrix
         assert(beacons.size() < MAX);
         buildDistMatrix();
+    }
+};
+
+struct Overlap
+{
+    int firstScan;
+    std::vector<int> fBeaconIdx;
+
+    int secondScan;
+    std::vector<int> sBeaconIdx;
+
+    Overlap(int first, int second)
+        : firstScan(first), secondScan(second)
+    {
+        //TODO: Get all beacon idx for each scanners
     }
 };
 
@@ -133,9 +162,9 @@ std::vector<Scanner> parseFile(std::ifstream&& file)
     return results;
 }
 
-std::vector<std::pair<int, int>> findOverlaps(const std::vector<Scanner>& scans)
+std::vector<Overlap> findOverlaps(const std::vector<Scanner>& scans)
 {
-    std::vector<std::pair<int, int>> overlaps;
+    std::vector<Overlap> overlaps;
 
     for (int i = 0; i < scans.size(); i++)
     {
@@ -151,7 +180,7 @@ std::vector<std::pair<int, int>> findOverlaps(const std::vector<Scanner>& scans)
             printf("{%i, %i} have %ld in common\n", i, j, common.size());
 
             if (common.size() >= 66)
-                overlaps.push_back({i, j});
+                overlaps.push_back(Overlap(i, j));
         }
     }
 
@@ -172,10 +201,11 @@ int main(int argc, char** argv)
     //    s.debugDist();
     //}
 
-    std::vector<std::pair<int, int>> overlaps = findOverlaps(scans);
+    std::vector<Overlap> overlaps = findOverlaps(scans);
     for (const auto& p : overlaps)
     {
-        printf("[OVERLAP] (%i, %i)\n", p.first, p.second);
+        //TODO: Debug output to validate overlaps
+        //printf("[OVERLAP] (%i, %i)\n", p.first, p.second);
     }
 
     return 0;
