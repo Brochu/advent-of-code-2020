@@ -1,2 +1,3 @@
-# advent-of-code
-My collection of the advent of code challenges with C++ and other languages over the years.
+# advent-of-code for 2020
+
+Collection of programming challenges for 2020. I implemented solutions in C++ as well as Golang
