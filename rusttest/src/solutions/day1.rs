@@ -39,19 +39,18 @@ pub fn solve_part_two(input: &str) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use aoc::read_file;
 
     #[test]
     #[ignore]
     fn part_one() {
-        let content = read_file("example", 1);
-        assert_eq!(solve_part_one(&content), 514579);
+        let input = include_str!("../../example/day1.txt");
+        assert_eq!(solve_part_one(&input), 514579);
     }
 
     #[test]
     #[ignore]
     fn part_two() {
-        let content = read_file("example", 1);
-        assert_eq!(solve_part_two(&content), 241861950)
+        let input = include_str!("../../example/day1.txt");
+        assert_eq!(solve_part_two(&input), 241861950)
     }
 }
