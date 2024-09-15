@@ -79,8 +79,8 @@ public:
            d = temp;
         };
         
-        for(int i=0; i < _n/2; i++)
-            for(int j=0; j < (_n+1)/2; j++)
+        for(size_t i=0; i < _n/2; i++)
+            for(size_t j=0; j < (_n+1)/2; j++)
                 cycle(t[i][j], t[_n-1-j][i], t[_n-1-i][_n-1-j], t[j][_n-1-i]);
 
         return t;
@@ -127,9 +127,9 @@ public:
     
     Tile reflectDiag(Tile t)
     {
-        for (int i = 0; i < (_n - 1); i++)
+        for (size_t i = 0; i < (_n - 1); i++)
         {
-            for (int j = 0; j < (_n - 1) - i; j++)
+            for (size_t j = 0; j < (_n - 1) - i; j++)
             {
                 int tmp = t[i][j];
                 t[i][j] = t[(_n - 1) - j][(_n - 1) - i];
@@ -201,7 +201,7 @@ public:
 
     bool solve_impl(std::vector<size_t>& partial, std::set<int> available, int index, int side) const
     {
-        for(int i = 0; i < _all.size(); ++i)
+        for(size_t i = 0; i < _all.size(); ++i)
         {
             // Cannot use the same tile twice
             if(available.find(_all.at(i).first) == available.end()) continue;

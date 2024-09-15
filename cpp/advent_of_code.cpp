@@ -3,7 +3,7 @@
 #include <numeric>
 #include <functional>
 
-#include "Day20.cpp"
+#include "Day19.cpp"
 
 int main(int argc, char* argv[])
 {
@@ -204,25 +204,25 @@ int main(int argc, char* argv[])
     //printf("= %lld\n", res);
     
     // Day 19
-    //Day19 d(argv[1]);
-    //const auto result = d.get_par1();
-    //printf("\n");
-    //printf(" = %i\n", result);
+    Day19 d(argv[1]);
+    const auto result = d.get_part1();
+    printf("\n");
+    printf(" = %zu\n", result);
 
     // Day 20
-    Day20 d(argv[1]);
-    const auto result = d.solve();
-    const int offset = static_cast<int>(sqrt(result.size())) - 1;
-    
-    const size_t corner1 = result.front();
-    const size_t corner2 = *(result.begin()+offset);
-    const size_t corner3 = *(result.rbegin()+offset);
-    const size_t corner4 = result.back();
+    //Day20 d(argv[1]);
+    //const auto result = d.solve();
+    //const int offset = static_cast<int>(sqrt(result.size())) - 1;
+    //
+    //const size_t corner1 = result.front();
+    //const size_t corner2 = *(result.begin()+offset);
+    //const size_t corner3 = *(result.rbegin()+offset);
+    //const size_t corner4 = result.back();
 
-    const size_t total = corner1 * corner2 * corner3 * corner4;
+    //const size_t total = corner1 * corner2 * corner3 * corner4;
 
-    printf("corners: (%lld, %lld, %lld, %lld)\n", corner1, corner2, corner3, corner4);
-    printf("total = %lld\n", total);
+    //printf("corners: (%lld, %lld, %lld, %lld)\n", corner1, corner2, corner3, corner4);
+    //printf("total = %lld\n", total);
 
     return 0;
 }
